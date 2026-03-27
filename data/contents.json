@@ -91912,5 +91912,1096 @@
       "clusterId": "",
       "similarCount": 0
     }
+  },
+  {
+    "id": "em-46308bbc",
+    "title": "中国人民银行召开2026年金融稳定工作会议",
+    "content": "【中国人民银行召开2026年金融稳定工作会议】会议要求，2026年，金融稳定工作要坚持政治引领，强化理论武装，树立和践行正确政绩观，将党建与业务深度融合，确保“十五五”时期金融稳定工作高标准起步、高质量推进。不断完善系统性金融风险防范化解体系，推动科技赋能工作做深做实，强化金融风险监测、评估、预警和早期纠正，持续遏制增量风险。坚持市场化法治化原则，积极稳妥处置重点领域金融风险，有序压降存量风险。深化重点金融机构改革，推动多渠道加大资本补充力度。增强开放格局下的金融风险防控能力，维护国家金融安全。筑牢金融稳定保障体系，充实风险处置资源和手段，坚决守住不发生系统性金融风险的底线。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687078491.html",
+    "publishedAt": "2026-03-27T09:01:52.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": -1,
+      "sentimentLabel": "negative",
+      "riskLevel": "low",
+      "summary": "中国人民银行召开2026年金融稳定工作会议",
+      "entities": [
+        {
+          "name": "银行",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-e0386407",
+    "title": "如何预测特朗普任内市场表现？有人抛出三点教训 有人给出一个指标",
+    "content": "【如何预测特朗普任内市场表现？有人抛出三点教训 有人给出一个指标】去年4月初，美国总统特朗普通过一则关税声明引发全球市场大跌；今年3月初，特朗普又通过与以色列联合打击伊朗痛击资本市场。耶鲁大学管理学院领导力研究高级副院长杰弗里·索南菲尔德表示，目前在金融市场进行交易，特朗普的想法远比美联储主席的行为、利率、失业率、通货膨胀率、消费者信心或任何其他宏观经济指标都重要得多。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://stock.eastmoney.com/a/202603273687075986.html",
+    "publishedAt": "2026-03-27T08:58:03.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": -1,
+      "sentimentLabel": "negative",
+      "riskLevel": "low",
+      "summary": "如何预测特朗普任内市场表现？有人抛出三点教训 有人给出一个指标",
+      "entities": [
+        {
+          "name": "消费",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-cb255da1",
+    "title": "证监会同意惠康科技深主板IPO注册",
+    "content": "【证监会同意惠康科技深主板IPO注册】3月27日消息，证监会日前下发关于同意宁波惠康工业科技股份有限公司首次公开发行股票注册的批复，同意该公司在深交所主板上市的注册申请。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687074269.html",
+    "publishedAt": "2026-03-27T08:57:09.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "证监会同意惠康科技深主板IPO注册",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-c329c4a2",
+    "title": "北京市海淀区：将出台模型券等惠企政策 大力支持OPC等创业模式",
+    "content": "【北京市海淀区：将出台模型券等惠企政策 大力支持OPC等创业模式】北京市海淀区委书记张革在2026中关村论坛年会的AI开源前沿论坛上表示，将全力建设世界AI创新生态，面向全球遴选最具创造力的“00后”青年先锋，推动AI人才高质量聚集，构建超千亿的基金体系，出台模型券等惠企政策，大力支持OPC（一人公司）等创业模式。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687071596.html",
+    "publishedAt": "2026-03-27T08:56:12.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "北京市海淀区：将出台模型券等惠企政策 大力支持OPC等创业模式",
+      "entities": [
+        {
+          "name": "AI",
+          "type": "industry"
+        },
+        {
+          "name": "基金",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-00fd3cde",
+    "title": "宁夏发改委：猪粮比价进入过度下跌一级预警区间",
+    "content": "【宁夏发改委：猪粮比价进入过度下跌一级预警区间】据宁夏回族自治区发改委监测，截至3月25日，全区猪粮比价为4.08：1，进入《自治区猪肉市场保供稳价工作预案》设定的过度下跌一级预警区间（低于5∶1）。下一步，将启动猪肉临时储备收储，建议养殖场（户）科学安排生产经营决策，将生猪产能保持在合理水平。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687071228.html",
+    "publishedAt": "2026-03-27T08:55:34.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": -1,
+      "sentimentLabel": "negative",
+      "riskLevel": "low",
+      "summary": "宁夏发改委：猪粮比价进入过度下跌一级预警区间",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-8b72c5e1",
+    "title": "油价飙升推高成本 美国咖啡馆及杂货店受冲击",
+    "content": "【油价飙升推高成本 美国咖啡馆及杂货店受冲击】国际油价持续上涨波及美国国内消费市场，由于柴油价格持续攀升，货物运输成本被大幅推高，使得咖啡馆、杂货店等经营都受到冲击。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687069534.html",
+    "publishedAt": "2026-03-27T08:54:47.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "油价飙升推高成本 美国咖啡馆及杂货店受冲击",
+      "entities": [
+        {
+          "name": "消费",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-26ea2fb4",
+    "title": "中国太保苏罡：适时增加权益资产配置",
+    "content": "【中国太保苏罡：适时增加权益资产配置】在今日中国太保业绩说明会上，太保副总裁、首席投资官、财务负责人苏罡表示，低利率环境下，中国太保将在公司风险容忍度之内，适时增加权益资产配置，同时积极把握市场结构性机会。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687067272.html",
+    "publishedAt": "2026-03-27T08:53:28.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": -1,
+      "sentimentLabel": "negative",
+      "riskLevel": "low",
+      "summary": "中国太保苏罡：适时增加权益资产配置",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-b940340a",
+    "title": "促进汽车数据跨境流动 中欧汽车工业协会签署备忘录",
+    "content": "【促进汽车数据跨境流动 中欧汽车工业协会签署备忘录】3月27日，在2026中关村论坛年会的“数据跨境流动创新发展论坛”上，中国汽车工业协会与欧洲汽车工业协会北京代表处签署《促进汽车数据跨境流动，推动产业高质量发展谅解备忘录》，秉持优势互补、资源共享、发展互促、合作共赢的原则，加强汽车数据跨境流动领域政策交流，促进数字技术赋能汽车数据跨境流动创新应用，推动管理部门和产业界良性互动，为汽车企业提供更多合作与发展机遇。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://biz.eastmoney.com/a/202603273687075689.html",
+    "publishedAt": "2026-03-27T08:51:16.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "促进汽车数据跨境流动 中欧汽车工业协会签署备忘录",
+      "entities": [
+        {
+          "name": "汽车",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-473b42e0",
+    "title": "欧科亿：2026年第一季度净利润预增2248.89%-2770.86%",
+    "content": "【欧科亿：2026年第一季度净利润预增2248.89%-2770.86%】欧科亿披露第一季度业绩预告。经财务部门初步测算，预计2026年第一季度实现归属于母公司所有者的净利润为18,000万元至22,000万元，与上年同期净利润766.32万元相比，将增加17,233.68万元至21,233.68万元，同比增长2248.89%-2770.86%。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687076661.html",
+    "publishedAt": "2026-03-27T08:50:49.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "欧科亿：2026年第一季度净利润预增2248.89%-2770.86%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-885c6ab5",
+    "title": "西部证券业绩快报：2025年度归母净利润17.54亿元 同比增长24.97%",
+    "content": "【西部证券业绩快报：2025年度归母净利润17.54亿元 同比增长24.97%】西部证券3月27日发布的2025年度业绩快报显示，公司报告期内实现营业收入59.85亿元，同比下降10.84%；归属于上市公司股东的净利润17.54亿元，同比增长24.97%；基本每股收益0.39元。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687065033.html",
+    "publishedAt": "2026-03-27T08:46:02.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "西部证券业绩快报：2025年度归母净利润17.54亿元 同比增长24.97%",
+      "entities": [
+        {
+          "name": "证券",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "em-1b9a3ec8",
+    "title": "中国平安付欣：公司估值还处于低位",
+    "content": "【中国平安付欣：公司估值还处于低位】对于股价表现，中国平安副总经理兼首席财务官付欣表示，从行业来看，寿险进入黄金发展期，综合金融和医疗养老也处于重要的发展阶段，中国平安所处的行业奠定了公司未来可持续增长的基础；从公司来看，中国平安相关运营指标持续向好；从估值来看，目前，中国平安的估值还处于低位。",
+    "sourceType": "news",
+    "sourceName": "东方财富",
+    "author": "东方财富",
+    "url": "http://finance.eastmoney.com/a/202603273687050545.html",
+    "publishedAt": "2026-03-27T08:19:45.000Z",
+    "fetchedAt": "2026-03-27T09:06:24.942Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "中国平安付欣：公司估值还处于低位",
+      "entities": [
+        {
+          "name": "中国平安",
+          "type": "company"
+        },
+        {
+          "name": "医疗",
+          "type": "industry"
+        },
+        {
+          "name": "黄金",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-feccf69e",
+    "title": "北方导航：2025年净利润1.21亿元，同比增长104.30%",
+    "content": "北方导航公告，2025年实现营业收入41.92亿元，同比增长52.56%；利润总额1.15亿元，同比增长39.15%；净利润1.21亿元，同比增长104.30%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675597010.shtml",
+    "publishedAt": "2026-03-27T09:11:04.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "北方导航：2025年净利润1.21亿元，同比增长104.30%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-2abcfce5",
+    "title": "航天电子：2025年净利润2.27亿元，同比下降58.58%",
+    "content": "航天电子公告，2025年实现营业收入139.1亿元，同比下降2.59%；净利润2.27亿元，同比下降58.58%。公司拟向全体股东每10股派发现金红利0.21元（含税）。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596922.shtml",
+    "publishedAt": "2026-03-27T09:10:14.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "航天电子：2025年净利润2.27亿元，同比下降58.58%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-ad85c78d",
+    "title": "俄外长指责美国将阿拉伯国家“推入火坑”",
+    "content": "当地时间3月26日，俄罗斯外长拉夫罗夫在接受采访时表示，美国及其盟友对中东局势的每次干涉都使情况变得更加“严峻”。拉夫罗夫谴责美国政府高级官员大肆吹嘘对伊朗领导层成员的刺杀行动，称这种行为非常“冷血虚伪”。他指出，美国利用其设立在海湾地区阿拉伯国家的军事基地对伊朗发动袭击，却把大部分美军从军事基地撤出，此举背叛了这些盟友，将阿拉伯盟友们“推进了火坑”。（央视新闻）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596883.shtml",
+    "publishedAt": "2026-03-27T09:09:33.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "俄外长指责美国将阿拉伯国家“推入火坑”",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-a547d483",
+    "title": "财政部：2月份全国共销售彩票343.13亿元 同比下降18%",
+    "content": "财政部公告，2月份，全国共销售彩票343.13亿元，同比减少75.41亿元，下降18%，主要是今年2月份春节假期彩票市场休市影响。其中，福利彩票机构销售121.44亿元，同比减少26.88亿元，下降18.1%；体育彩票机构销售221.70亿元，同比减少48.53亿元，下降17.9%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596855.shtml",
+    "publishedAt": "2026-03-27T09:09:21.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "财政部：2月份全国共销售彩票343.13亿元 同比下降18%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-495d206b",
+    "title": "外汇局：我国对外投资收益和境外来华投资收益均有望延续增长态势",
+    "content": "国家外汇局发布2025年中国国际收支报告，展望2026年，国际收支有条件保持基本平衡。从经常账户看，“十五五”规划纲要明确提出，坚持扩大内需战略基点，建设强大国内市场，加快培育新动能，促进消费和投资、供给和需求良性互动，将支持我国经常账户保持合理均衡。一是货物贸易稳出口、扩进口将协同推进。我国对外贸易竞争力强、贸易结构优化，外贸新业态蓬勃发展，有助于出口保持韧性。我国已成为全球第二大消费市场，未来将继续发挥超大规模市场优势，进口更多国际优质商品，推动扩进口和稳出口更好结合，促进贸易优化平衡发展。二是服务贸易继续优化发展。今年以来外籍人员入境游保持增长态势，旅行收入有望继续增加。以电信计算机和信息服务等为代表的生产性服务贸易，已成为我国服务贸易收入增长引擎，发展态势良好。我国居民出境旅游、留学需求继续平稳增长。三是我国对外投资收益和境外来华投资收益均有望延续增长态势。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596786.shtml",
+    "publishedAt": "2026-03-27T09:08:49.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "外汇局：我国对外投资收益和境外来华投资收益均有望延续增长态势",
+      "entities": [
+        {
+          "name": "消费",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-b69d9ff8",
+    "title": "贝莱德对海尔智家的多头持仓比例增至8.01%",
+    "content": "据香港交易所披露，贝莱德（BlackRock）对海尔智家股份有限公司 - H股的多头持仓比例于2026年3月23日从7.4%增至8.01%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596764.shtml",
+    "publishedAt": "2026-03-27T09:08:00.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "贝莱德对海尔智家的多头持仓比例增至8.01%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-83671ec2",
+    "title": "摩根大通对宁德时代的多头持仓比例增至9.3%",
+    "content": "据香港交易所披露，摩根大通（JPMorgan）对宁德时代新能源科技股份有限公司 - H股的多头持仓比例于2026年3月24日从8.57%增至9.3%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596750.shtml",
+    "publishedAt": "2026-03-27T09:07:41.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "摩根大通对宁德时代的多头持仓比例增至9.3%",
+      "entities": [
+        {
+          "name": "宁德时代",
+          "type": "company"
+        },
+        {
+          "name": "新能源",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-ff0e501a",
+    "title": "贝莱德对哔哩哔哩-W的多头持仓比例增至5.07%",
+    "content": "据香港交易所披露，贝莱德（BlackRock）对哔哩哔哩股份有限公司 - W的多头持仓比例于2026年3月23日从4.81%增至5.07%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596737.shtml",
+    "publishedAt": "2026-03-27T09:07:20.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "贝莱德对哔哩哔哩-W的多头持仓比例增至5.07%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-61145651",
+    "title": "委内瑞拉多地举行游行集会 声援马杜罗",
+    "content": "当地时间26日，委内瑞拉首都加拉加斯以及全国多地，举行声援马杜罗的游行集会，谴责美国方面强行控制马杜罗夫妇、并驳斥美方的相关指控。一名在1月3日美国袭击行动中遇难的军人家属参加了当天的活动。她要求释放马杜罗，并谴责美国对委内瑞拉的军事干预。（央视新闻）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596599.shtml",
+    "publishedAt": "2026-03-27T09:04:47.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "委内瑞拉多地举行游行集会 声援马杜罗",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-ed6ef835",
+    "title": "全柴动力：2025年净利润6446.13万元，同比下降22.66%",
+    "content": "全柴动力公告，2025年营业收入43.98亿元，同比增长10.73%。净利润6446.13万元，同比下降22.66%。公司拟以2025年12月31日总股本4.36亿股为基数，向全体股东每10股派现金红利0.3元(含税)。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596593.shtml",
+    "publishedAt": "2026-03-27T09:04:43.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "全柴动力：2025年净利润6446.13万元，同比下降22.66%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-c67dda09",
+    "title": "2026中国氢能展暨国际氢能大会在京举行",
+    "content": "3月25日至27日，2026中国氢能展暨国际氢能大会在北京举行。大会以“向新向绿、共创共赢”为主题，涵盖大型展览会、全体大会暨“十五五”氢能产业发展论坛等多场活动。(新华社)",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596590.shtml",
+    "publishedAt": "2026-03-27T09:04:41.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "2026中国氢能展暨国际氢能大会在京举行",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-fc1534a9",
+    "title": "艾迪药业：收购南大药业22.2324%股权",
+    "content": "艾迪药业公告，公司拟以1.3亿元的价格，以自有或自筹资金收购华泰国信、道兴创投及姚繁狄持有的南大药业合计22.2324%股权。其中，拟收购华泰国信持有的南大药业19.6337%的股权、道兴创投持有的南大药业0.0987%的股权、姚繁狄持有的南大药业2.5000%的股权。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596581.shtml",
+    "publishedAt": "2026-03-27T09:04:33.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "艾迪药业：收购南大药业22.2324%股权",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-1321cda3",
+    "title": "伊朗称多处文化遗产在美以袭击中受损",
+    "content": "当地时间27日，伊朗德黑兰市议会文化遗产委员会主席阿拉维表示，在美国和以色列对伊朗开展的打击行动中，伊朗全国多地文化遗产遭到破坏。阿拉维称，伊朗全国至少有120处博物馆、历史建筑及文化遗址遭到直接打击，并出现不同程度的结构性损坏。其中，德黑兰省受影响最为严重，受损文物数量超过50处。据介绍，受损建筑包括多处知名地标，包括古列斯坦王宫、萨德阿巴德宫等。（央视新闻）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596571.shtml",
+    "publishedAt": "2026-03-27T09:04:27.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "伊朗称多处文化遗产在美以袭击中受损",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-92a625fa",
+    "title": "商务部、中国出口信用保险公司联合印发《关于充分发挥出口信用保险作用 推动“十五五”商务高质量发展良好开局的通知》",
+    "content": "为贯彻落实党中央、国务院决策部署，近日，商务部、中国出口信用保险公司（以下简称中信保公司）联合印发《关于充分发挥出口信用保险作用 推动“十五五”商务高质量发展良好开局的通知》，指导各地商务主管部门和中信保公司各营业机构加强协同配合，加大出口信用保险支持力度，加快商务高质量发展，积极服务“十五五”良好开局。《通知》围绕2026年商务高质量发展重点任务，充分发挥出口信用保险作用，提出6方面具体举措。一是优化升级货物贸易。二是培育外贸新动能。三是推进内外贸一体化。四是引导产供链合理有序跨境布局。五是深化“一带一路”经贸合作。六是强化对中小微企业支持。《通知》强调，各地商务主管部门要在符合世贸组织规则前提下，持续完善出口信用保险政策支持体系，推动存量和增量政策提质增效。中信保公司各营业机构要高质量履行职能，优化承保、理赔追偿、融资增信、资信等服务，为企业应对外部冲击、开拓多元市场、稳住出口订单、拓展内销渠道、稳定生产经营提供有力有效风险保障服务。（商务部）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596556.shtml",
+    "publishedAt": "2026-03-27T09:04:19.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0.33,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "商务部、中国出口信用保险公司联合印发《关于充分发挥出口信用保险作用 推动“十五五”商务高质量发展良好开局的通知》",
+      "entities": [
+        {
+          "name": "保险",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-afbb2793",
+    "title": "中国人民银行：深化重点金融机构改革，推动多渠道加大资本补充力度",
+    "content": "近日，中国人民银行召开2026年金融稳定工作会议。会议要求，2026年，金融稳定工作要坚持政治引领，强化理论武装，树立和践行正确政绩观，将党建与业务深度融合，确保“十五五”时期金融稳定工作高标准起步、高质量推进。不断完善系统性金融风险防范化解体系，推动科技赋能工作做深做实，强化金融风险监测、评估、预警和早期纠正，持续遏制增量风险。坚持市场化法治化原则，积极稳妥处置重点领域金融风险，有序压降存量风险。深化重点金融机构改革，推动多渠道加大资本补充力度。增强开放格局下的金融风险防控能力，维护国家金融安全。筑牢金融稳定保障体系，充实风险处置资源和手段，坚决守住不发生系统性金融风险的底线。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596451.shtml",
+    "publishedAt": "2026-03-27T09:01:22.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": -1,
+      "sentimentLabel": "negative",
+      "riskLevel": "low",
+      "summary": "中国人民银行：深化重点金融机构改革，推动多渠道加大资本补充力度",
+      "entities": [
+        {
+          "name": "银行",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-7936cee9",
+    "title": "小鹏汽车：中文名称将由“小鹏汽车有限公司”变更为“小鹏集团”",
+    "content": "小鹏汽车-W公告，自2026年4月1日起，公司中文名称（仅用于识别）将由“小鹏汽车有限公司”变更为“小鹏集团”，英文名称维持不变。同时，公司A类普通股中文股份简称将于同一时间由“小鹏汽车–W”变更为“小鹏集团–W”，英文简称“XPENG–W”及股份代号“9868”维持不变。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596442.shtml",
+    "publishedAt": "2026-03-27T09:01:11.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "小鹏汽车：中文名称将由“小鹏汽车有限公司”变更为“小鹏集团”",
+      "entities": [
+        {
+          "name": "汽车",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-62c5a6af",
+    "title": "坤彩科技：2025年净利润亏损9289.55万元",
+    "content": "坤彩科技发布业绩快报，2025年度营业总收入12.58亿元，同比增长29.74%。报告期内，公司在市场经济环境波动及海外市场政策多变等多重挑战下，公司持续保持在珠光材料业务领域的竞争优势，珠光材料业务收入与利润实现稳步增长。钛白粉及氧化铁业务产能逐步释放，销量及收入实现提升，但受行业市场价格下行影响，本期计提大额资产减值准备，导致净利润出现亏损。归属于上市公司股东的净利润-9289.55万元，同比下降364.34%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596327.shtml",
+    "publishedAt": "2026-03-27T09:00:13.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "坤彩科技：2025年净利润亏损9289.55万元",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-ecac3f9c",
+    "title": "王文涛部长会见欧委会贸易和经济安全委员谢夫乔维奇",
+    "content": "3月26日，商务部部长王文涛在喀麦隆雅温得出席世贸组织第十四届部长级会议(MC14)期间，会见欧委会贸易和经济安全委员谢夫乔维奇。双方就世贸组织改革、中欧经贸关系等议题深入交换了意见。中国常驻世贸组织代表团大使李詠箑参加会见。（商务部）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596306.shtml",
+    "publishedAt": "2026-03-27T09:00:11.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "王文涛部长会见欧委会贸易和经济安全委员谢夫乔维奇",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-49e82387",
+    "title": "坤彩科技：预计2026年第一季度净利润同比增长151.56%到235.41%",
+    "content": "坤彩科技公告，预计2026年第一季度实现归属于上市公司股东的净利润为6000万元到8000万元，与上年同期2385.14万元相比，将增加3614.86万元到5614.86万元，同比增加151.56%到235.41%。预计2026年第一季度实现归属于上市公司股东的扣除非经常性损益的净利润为6000万元到8000万元，与上年同期2165.93万元相比，将增加3834.07万元到5834.07万元，同比增加177.02%到269.36%。预计2026年第一季度营业收入为3.8亿元到4.5亿元，与上年同期2.58亿元相比，将增加1.22亿元到1.92亿元，同比增加47.40%到74.56%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596262.shtml",
+    "publishedAt": "2026-03-27T09:00:07.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "坤彩科技：预计2026年第一季度净利润同比增长151.56%到235.41%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-b6108e6e",
+    "title": "美媒：共和党人称约翰逊大发雷霆，强力施压他们投票支持延长《涉外情报监控法》",
+    "content": "安娜·卢娜等共和党籍众议员告诉该媒体，共和党籍众议院议长迈克·约翰逊日前曾对他们大发雷霆，强力施压他们投票支持延长《涉外情报监控法》第702条。据报道，卢娜在接受采访时将这次发生在国会议事厅的训斥比喻称 “（就像）被按在地上打屁股”。她称，训斥者警告说，如果她投票反对延长《涉外情报监控法》，她将对“数千名美国人的死亡”负有责任。共和党籍众议员拉尔夫·诺曼向Axios描述当时的情景时表示，约翰逊确实发表了上述言论，他“很生气，且感到沮丧”。（环球网）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596239.shtml",
+    "publishedAt": "2026-03-27T08:59:57.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "美媒：共和党人称约翰逊大发雷霆，强力施压他们投票支持延长《涉外情报监控法》",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-59cbdb34",
+    "title": "锐捷网络：2025年净利润6.96亿元，同比增长21.30%",
+    "content": "锐捷网络公告，2025年营业收入143.16亿元，同比增长22.37%。净利润6.96亿元，同比增长21.30%。公司董事会审议通过的利润分配预案为：以7.95亿股为基数，向全体股东每10股派发现金红利5.25元（含税），送红股0股（含税），以资本公积金向全体股东每10股转增4股。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596233.shtml",
+    "publishedAt": "2026-03-27T08:59:48.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "锐捷网络：2025年净利润6.96亿元，同比增长21.30%",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-09f7118b",
+    "title": "新华保险：2025年净利润362.84亿元，同比增长38.3%",
+    "content": "新华保险公告，2025年实现原保险保费收入1958.71亿元，同比增长14.9%；内含价值2878.4亿元，同比增长11.4%；归属于母公司股东的净利润362.84亿元，同比增长38.3%。公司拟向全体股东派发2025年末期现金股利每股2.06元（含税），共计64.26亿元，2025年合计派发现金股利85.16亿元，同比增加7.9%。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596231.shtml",
+    "publishedAt": "2026-03-27T08:59:36.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "新华保险：2025年净利润362.84亿元，同比增长38.3%",
+      "entities": [
+        {
+          "name": "保险",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-2091eabf",
+    "title": "2月我国国际收支货物和服务贸易进出口规模39349亿元",
+    "content": "国家外汇局3月27日公布的数据显示，2026年2月，我国国际收支货物和服务贸易进出口规模39349亿元。其中，货物和服务贸易出口21476亿元，进口17873亿元，顺差3603亿元。服务贸易主要项目为：旅行服务进出口规模1596亿元，其他商业服务进出口规模1285亿元，运输服务进出口规模1033亿元，电信、计算机和信息服务进出口规模628亿元。按美元计值，2026年2月，我国国际收支货物和服务贸易出口3092亿美元，进口2573亿美元，顺差519亿美元。（央视新闻）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596202.shtml",
+    "publishedAt": "2026-03-27T08:58:21.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 0,
+      "sentimentLabel": "neutral",
+      "riskLevel": "low",
+      "summary": "2月我国国际收支货物和服务贸易进出口规模39349亿元",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-4480e9af",
+    "title": "美图公司：拟不超过3亿港元回购股份",
+    "content": "美图公司公告，公司董事会已决定行使股份回购授权，计划在公开市场购买总额不超过3亿港元等值的本公司股份。该计划自公告日期起为期一年，具体实施将视市场情况由董事会酌情决定。资金来源为公司目前可使用的现金储备。",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596188.shtml",
+    "publishedAt": "2026-03-27T08:57:56.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "美图公司：拟不超过3亿港元回购股份",
+      "entities": []
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
+  },
+  {
+    "id": "ths-995187c8",
+    "title": "北京市海淀区：将出台模型券等惠企政策 大力支持OPC等创业模式",
+    "content": "北京市海淀区委书记张革在2026中关村论坛年会的AI开源前沿论坛上表示，开源已成为驱动我国人工智能发展的重要方向，为行业指明了从AI技术突破迈向产业落地的清晰路径。将全力建设世界AI创新生态，面向全球遴选最具创造力的“00后”青年先锋，推动AI人才高质量聚集，构建超千亿的基金体系，出台模型券等惠企政策，大力支持OPC（一人公司）等创业模式。(财联社）",
+    "sourceType": "news",
+    "sourceName": "同花顺",
+    "author": "同花顺",
+    "url": "https://news.10jqka.com.cn/20260327/c675596167.shtml",
+    "publishedAt": "2026-03-27T08:57:04.000Z",
+    "fetchedAt": "2026-03-27T09:11:24.957Z",
+    "market": "cn",
+    "metrics": {
+      "comments": 0,
+      "views": 0
+    },
+    "matches": [],
+    "nlp": {
+      "sentiment": 1,
+      "sentimentLabel": "positive",
+      "riskLevel": "low",
+      "summary": "北京市海淀区：将出台模型券等惠企政策 大力支持OPC等创业模式",
+      "entities": [
+        {
+          "name": "人工智能",
+          "type": "industry"
+        },
+        {
+          "name": "AI",
+          "type": "industry"
+        },
+        {
+          "name": "基金",
+          "type": "industry"
+        }
+      ]
+    },
+    "dedup": {
+      "clusterId": "",
+      "similarCount": 0
+    }
   }
 ]

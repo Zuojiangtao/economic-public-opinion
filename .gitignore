@@ -37,3 +37,6 @@ dist-ssr
 /web/pnpm-lock.yaml
 /server/node_modules
 /server/pnpm-lock.yaml
+
+# data
+/data/contents.json
