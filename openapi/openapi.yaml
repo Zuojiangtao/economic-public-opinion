@@ -1,0 +1,721 @@
+openapi: 3.1.0
+info:
+  title: 舆情监测系统 API
+  version: 1.0.0
+  description: 金融舆情监测系统 MVP 接口定义
+
+servers:
+  - url: /api/v1
+
+paths:
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: 用户登录
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [username, password]
+              properties:
+                username: { type: string }
+                password: { type: string }
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user: { $ref: '#/components/schemas/User' }
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: 获取当前用户信息
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /contents:
+    get:
+      operationId: searchContents
+      tags: [contents]
+      summary: 舆情内容检索
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: keyword
+          in: query
+          schema: { type: string }
+        - name: sourceType
+          in: query
+          schema:
+            type: string
+            enum: [news, forums, social, broker, app]
+        - name: sentiment
+          in: query
+          schema:
+            type: string
+            enum: [positive, neutral, negative]
+        - name: riskLevel
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+        - name: market
+          in: query
+          schema:
+            type: string
+            enum: [cn, hk, us]
+            description: 市场类型（A股/港股/美股）
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
+        - name: monitoringProjectId
+          in: query
+          schema: { type: string }
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [publishedAt, sentiment, riskLevel]
+            default: publishedAt
+        - name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: 分页结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentListResponse'
+
+  /contents/{id}:
+    get:
+      operationId: getContentById
+      tags: [contents]
+      summary: 获取舆情内容详情
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentItem'
+
+  /contents/stats:
+    get:
+      operationId: getContentStats
+      tags: [contents]
+      summary: 获取舆情统计数据
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: startDate
+          in: query
+          schema: { type: string, format: date }
+        - name: endDate
+          in: query
+          schema: { type: string, format: date }
+        - name: monitoringProjectId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentStats'
+
+  /monitoring-projects:
+    get:
+      operationId: listMonitoringProjects
+      tags: [monitoring]
+      summary: 监测方案列表
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: 分页结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringProjectListResponse'
+    post:
+      operationId: createMonitoringProject
+      tags: [monitoring]
+      summary: 创建监测方案
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitoringProjectInput'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringProject'
+
+  /monitoring-projects/{id}:
+    get:
+      operationId: getMonitoringProject
+      tags: [monitoring]
+      summary: 获取监测方案详情
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringProject'
+    put:
+      operationId: updateMonitoringProject
+      tags: [monitoring]
+      summary: 更新监测方案
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitoringProjectInput'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MonitoringProject'
+    delete:
+      operationId: deleteMonitoringProject
+      tags: [monitoring]
+      summary: 删除监测方案
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: 删除成功
+
+  /alerts:
+    get:
+      operationId: listAlerts
+      tags: [alerts]
+      summary: 预警列表
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, resolved, ignored]
+        - name: riskLevel
+          in: query
+          schema:
+            type: string
+            enum: [low, medium, high, critical]
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: pageSize
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        '200':
+          description: 分页结果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertListResponse'
+
+  /alerts/{id}:
+    get:
+      operationId: getAlert
+      tags: [alerts]
+      summary: 获取预警详情
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+
+  /alerts/{id}/handle:
+    post:
+      operationId: handleAlert
+      tags: [alerts]
+      summary: 处置预警
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertHandleInput'
+      responses:
+        '200':
+          description: 处置成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+
+  /alert-rules:
+    get:
+      operationId: listAlertRules
+      tags: [alerts]
+      summary: 预警规则列表
+      security: [{ BearerAuth: [] }]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AlertRule'
+    post:
+      operationId: createAlertRule
+      tags: [alerts]
+      summary: 创建预警规则
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertRuleInput'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlertRule'
+
+  /lexicons:
+    get:
+      operationId: listLexicons
+      tags: [settings]
+      summary: 词库列表
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+            enum: [brand, competitor, risk, synonym, stop]
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LexiconEntry'
+    post:
+      operationId: createLexiconEntry
+      tags: [settings]
+      summary: 添加词条
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LexiconEntryInput'
+      responses:
+        '201':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LexiconEntry'
+
+  /lexicons/{id}:
+    delete:
+      operationId: deleteLexiconEntry
+      tags: [settings]
+      summary: 删除词条
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: 删除成功
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        username: { type: string }
+        role: { type: string, enum: [admin, analyst, operator] }
+        avatar: { type: string }
+
+    ContentItem:
+      type: object
+      required: [id, title, content, sourceType, sourceName, publishedAt, market]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        content: { type: string }
+        sourceType:
+          type: string
+          enum: [news, forums, social, broker, app]
+        sourceName: { type: string }
+        author: { type: string }
+        url: { type: string, format: uri }
+        publishedAt: { type: string, format: date-time }
+        fetchedAt: { type: string, format: date-time }
+        market:
+          type: string
+          enum: [cn, hk, us]
+          description: 市场类型（cn=A股, hk=港股, us=美股）
+        metrics:
+          type: object
+          properties:
+            likes: { type: integer }
+            comments: { type: integer }
+            shares: { type: integer }
+            views: { type: integer }
+        matches:
+          type: array
+          items:
+            type: object
+            properties:
+              projectId: { type: string }
+              projectName: { type: string }
+              keywords: { type: array, items: { type: string } }
+              tags: { type: array, items: { type: string } }
+        nlp:
+          type: object
+          properties:
+            sentiment: { type: number, minimum: -1, maximum: 1 }
+            sentimentLabel:
+              type: string
+              enum: [positive, neutral, negative]
+            riskLevel:
+              type: string
+              enum: [low, medium, high, critical]
+            summary: { type: string }
+            entities:
+              type: array
+              items:
+                type: object
+                properties:
+                  name: { type: string }
+                  type: { type: string, enum: [company, person, product, industry, index] }
+        dedup:
+          type: object
+          properties:
+            clusterId: { type: string }
+            similarCount: { type: integer }
+
+    ContentListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/ContentItem' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    ContentStats:
+      type: object
+      properties:
+        totalCount: { type: integer }
+        sentimentDistribution:
+          type: object
+          properties:
+            positive: { type: integer }
+            neutral: { type: integer }
+            negative: { type: integer }
+        riskDistribution:
+          type: object
+          properties:
+            low: { type: integer }
+            medium: { type: integer }
+            high: { type: integer }
+            critical: { type: integer }
+        sourceDistribution:
+          type: array
+          items:
+            type: object
+            properties:
+              sourceType: { type: string }
+              count: { type: integer }
+        trendData:
+          type: array
+          items:
+            type: object
+            properties:
+              date: { type: string, format: date }
+              total: { type: integer }
+              positive: { type: integer }
+              neutral: { type: integer }
+              negative: { type: integer }
+        topKeywords:
+          type: array
+          items:
+            type: object
+            properties:
+              keyword: { type: string }
+              count: { type: integer }
+        topEntities:
+          type: array
+          items:
+            type: object
+            properties:
+              name: { type: string }
+              type: { type: string }
+              count: { type: integer }
+
+    MonitoringProject:
+      type: object
+      required: [id, name, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [active, paused, archived] }
+        keywords:
+          type: object
+          properties:
+            include: { type: array, items: { type: string } }
+            exclude: { type: array, items: { type: string } }
+            synonyms:
+              type: array
+              items:
+                type: object
+                properties:
+                  word: { type: string }
+                  alternatives: { type: array, items: { type: string } }
+        sourceTypes:
+          type: array
+          items:
+            type: string
+            enum: [news, forums, social, broker, app]
+        sentimentThreshold: { type: number }
+        riskThreshold: { type: string, enum: [low, medium, high, critical] }
+        hitCount: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+
+    MonitoringProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        status: { type: string, enum: [active, paused] }
+        keywords:
+          type: object
+          properties:
+            include: { type: array, items: { type: string } }
+            exclude: { type: array, items: { type: string } }
+        sourceTypes:
+          type: array
+          items:
+            type: string
+            enum: [news, forums, social, broker, app]
+        sentimentThreshold: { type: number }
+        riskThreshold: { type: string, enum: [low, medium, high, critical] }
+
+    MonitoringProjectListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/MonitoringProject' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    Alert:
+      type: object
+      required: [id, title, riskLevel, status, triggeredAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        riskLevel: { type: string, enum: [low, medium, high, critical] }
+        status: { type: string, enum: [pending, processing, resolved, ignored] }
+        ruleName: { type: string }
+        triggeredAt: { type: string, format: date-time }
+        relatedContentIds:
+          type: array
+          items: { type: string }
+        relatedContents:
+          type: array
+          items: { $ref: '#/components/schemas/ContentItem' }
+        handleRecords:
+          type: array
+          items:
+            type: object
+            properties:
+              handler: { type: string }
+              action: { type: string }
+              note: { type: string }
+              timestamp: { type: string, format: date-time }
+
+    AlertListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Alert' }
+        total: { type: integer }
+        page: { type: integer }
+        pageSize: { type: integer }
+
+    AlertHandleInput:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: [start_processing, resolve, ignore, reopen]
+        note: { type: string }
+
+    AlertRule:
+      type: object
+      required: [id, name, enabled]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        description: { type: string }
+        enabled: { type: boolean }
+        conditions:
+          type: object
+          properties:
+            keywords: { type: array, items: { type: string } }
+            sentimentBelow: { type: number }
+            riskLevelAbove: { type: string, enum: [low, medium, high, critical] }
+            volumeThreshold: { type: integer }
+            sourceTypes:
+              type: array
+              items: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AlertRuleInput:
+      type: object
+      required: [name, enabled, conditions]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        enabled: { type: boolean }
+        conditions:
+          type: object
+          properties:
+            keywords: { type: array, items: { type: string } }
+            sentimentBelow: { type: number }
+            riskLevelAbove: { type: string, enum: [low, medium, high, critical] }
+            volumeThreshold: { type: integer }
+            sourceTypes:
+              type: array
+              items: { type: string }
+
+    LexiconEntry:
+      type: object
+      required: [id, word, category]
+      properties:
+        id: { type: string }
+        word: { type: string }
+        category: { type: string, enum: [brand, competitor, risk, synonym, stop] }
+        synonyms: { type: array, items: { type: string } }
+        createdAt: { type: string, format: date-time }
+
+    LexiconEntryInput:
+      type: object
+      required: [word, category]
+      properties:
+        word: { type: string }
+        category: { type: string, enum: [brand, competitor, risk, synonym, stop] }
+        synonyms: { type: array, items: { type: string } }
+
+    ApiError:
+      type: object
+      properties:
+        code: { type: string }
+        message: { type: string }
+        details: { type: object }
+        requestId: { type: string }
