@@ -281,3 +281,33 @@ export interface IndustryMappingInput {
   indices?: string[];
   overseasMappings?: OverseasMapping[];
 }
+
+// ==================== Temperature ====================
+
+export type TemperatureLevel = 'freezing' | 'cool' | 'neutral' | 'warm' | 'hot';
+
+export interface TemperatureBreakdown {
+  sentimentScore: number;
+  volumeAnomalyScore: number;
+  spreadIntensityScore: number;
+  sourceCredibilityScore: number;
+}
+
+export interface TemperatureSnapshot {
+  id: string;
+  industryId: string;
+  industryName: string;
+  score: number;
+  level: TemperatureLevel;
+  breakdown: TemperatureBreakdown;
+  contentCount: number;
+  sentimentDistribution: { positive: number; neutral: number; negative: number };
+  snapshotAt: string;
+  granularity: 'hour' | 'day';
+}
+
+export interface TemperatureListResponse {
+  items: TemperatureSnapshot[];
+  total: number;
+  granularity: 'hour' | 'day';
+}

@@ -13,6 +13,12 @@ import {
   queryIndustriesByKeywords,
   queryIndustriesByText,
 } from '../nlp/industryMappingService.js';
+import { computeTemperatureSnapshots } from '../temperature/temperatureService.js';
+import {
+  updateSnapshots,
+  getSnapshotsByGranularity,
+  getSnapshotByIndustry,
+} from '../temperature/temperatureStore.js';
 import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
 import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType } from '../types.js';
 
@@ -328,6 +334,52 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     if (idx !== -1) lexicons.splice(idx, 1);
     saveLexicons(lexicons);
     res.status(204).end();
+  });
+
+  // ==================== Temperatures ====================
+
+  /**
+   * 计算并刷新温度快照的辅助函数。
+   * 每次请求时按需重新计算（MVP 阶段不做缓存过期，直接实时算）。
+   */
+  function refreshTemperatures(granularity: 'hour' | 'day' = 'hour') {
+    const industries = Array.from(industryMappings.values());
+    const allItems = storage.getAll();
+    const snapshots = computeTemperatureSnapshots(industries, allItems, granularity);
+    updateSnapshots(snapshots);
+    return snapshots;
+  }
+
+  /**
+   * GET /temperatures
+   * 返回所有行业温度列表，按温度降序排列。
+   * Query: granularity=hour|day（默认 hour）
+   */
+  router.get('/temperatures', (req, res) => {
+    const granularity = req.query.granularity === 'day' ? 'day' : 'hour';
+    refreshTemperatures(granularity);
+    const snapshots = getSnapshotsByGranularity(granularity);
+    res.json({
+      items: snapshots,
+      total: snapshots.length,
+      granularity,
+    });
+  });
+
+  /**
+   * GET /temperatures/:industryId
+   * 返回单个行业的温度详情。
+   * Query: granularity=hour|day（默认 hour）
+   */
+  router.get('/temperatures/:industryId', (req, res) => {
+    const granularity = req.query.granularity === 'day' ? 'day' : 'hour';
+    refreshTemperatures(granularity);
+    const snapshot = getSnapshotByIndustry(req.params.industryId, granularity);
+    if (!snapshot) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '行业温度不存在' });
+      return;
+    }
+    res.json(snapshot);
   });
 
   // ==================== Crawler Management ====================

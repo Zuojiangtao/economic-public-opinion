@@ -21,6 +21,8 @@ import type {
   IndustryMappingInput,
   IndustryQueryResult,
   IndustryType,
+  TemperatureSnapshot,
+  TemperatureListResponse,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -125,4 +127,11 @@ export const industryMappingsApi = {
     request<void>(`/industry-mappings/${id}`, { method: 'DELETE' }),
   query: (params: { keywords?: string[]; text?: string }) =>
     request<IndustryQueryResult[]>('/industry-mappings/query', { method: 'POST', body: JSON.stringify(params) }),
+};
+
+export const temperaturesApi = {
+  list: (granularity?: 'hour' | 'day') =>
+    request<TemperatureListResponse>(`/temperatures${granularity ? `?granularity=${granularity}` : ''}`),
+  getById: (industryId: string, granularity?: 'hour' | 'day') =>
+    request<TemperatureSnapshot>(`/temperatures/${industryId}${granularity ? `?granularity=${granularity}` : ''}`),
 };

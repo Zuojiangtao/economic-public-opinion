@@ -14,6 +14,8 @@ import type {
   RiskLevel,
   AlertStatus,
   LexiconCategory,
+  TemperatureSnapshot,
+  TemperatureLevel,
 } from '../api/types';
 
 let contents = [...mockContents];
@@ -322,5 +324,80 @@ export const handlers = [
     await delay(200);
     lexicons = lexicons.filter((l) => l.id !== params.id);
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  // Temperatures
+  http.get('/api/v1/temperatures', async ({ request }) => {
+    await delay(200);
+    const url = new URL(request.url);
+    const granularity = (url.searchParams.get('granularity') || 'hour') as 'hour' | 'day';
+
+    const mockIndustries: { id: string; name: string; score: number; level: TemperatureLevel; bd: [number, number, number, number]; cnt: number; pos: number; neu: number; neg: number }[] = [
+      { id: 'industry-ai',          name: 'AI科技',   score: 82, level: 'hot',      bd: [88, 75, 72, 95], cnt: 124, pos: 80, neu: 30, neg: 14 },
+      { id: 'industry-semiconductor', name: '半导体',  score: 74, level: 'warm',     bd: [72, 68, 65, 90], cnt: 98,  pos: 55, neu: 28, neg: 15 },
+      { id: 'industry-new-energy',  name: '新能源',   score: 61, level: 'neutral',   bd: [65, 55, 58, 75], cnt: 76,  pos: 38, neu: 25, neg: 13 },
+      { id: 'industry-pharma',      name: '医药',     score: 55, level: 'neutral',   bd: [50, 52, 48, 80], cnt: 62,  pos: 28, neu: 22, neg: 12 },
+      { id: 'industry-metals',      name: '有色金属', score: 44, level: 'cool',      bd: [40, 48, 38, 65], cnt: 45,  pos: 18, neu: 16, neg: 11 },
+      { id: 'industry-bank',        name: '银行',     score: 38, level: 'cool',      bd: [35, 40, 30, 70], cnt: 38,  pos: 14, neu: 15, neg: 9  },
+      { id: 'industry-realestate',  name: '房地产',   score: 22, level: 'freezing',  bd: [18, 28, 15, 55], cnt: 30,  pos: 5,  neu: 12, neg: 13 },
+    ];
+
+    const items: TemperatureSnapshot[] = mockIndustries.map((d) => ({
+      id: `temp-${d.id}-${granularity}`,
+      industryId: d.id,
+      industryName: d.name,
+      score: d.score,
+      level: d.level,
+      breakdown: {
+        sentimentScore: d.bd[0],
+        volumeAnomalyScore: d.bd[1],
+        spreadIntensityScore: d.bd[2],
+        sourceCredibilityScore: d.bd[3],
+      },
+      contentCount: d.cnt,
+      sentimentDistribution: { positive: d.pos, neutral: d.neu, negative: d.neg },
+      snapshotAt: new Date().toISOString(),
+      granularity,
+    }));
+
+    return HttpResponse.json({ items, total: items.length, granularity });
+  }),
+
+  http.get('/api/v1/temperatures/:industryId', async ({ params, request }) => {
+    await delay(150);
+    const url = new URL(request.url);
+    const granularity = (url.searchParams.get('granularity') || 'hour') as 'hour' | 'day';
+    const industryId = params.industryId as string;
+
+    const mockMap: Record<string, { name: string; score: number; level: TemperatureLevel; bd: [number, number, number, number]; cnt: number; pos: number; neu: number; neg: number }> = {
+      'industry-ai':           { name: 'AI科技',   score: 82, level: 'hot',     bd: [88, 75, 72, 95], cnt: 124, pos: 80, neu: 30, neg: 14 },
+      'industry-semiconductor':{ name: '半导体',   score: 74, level: 'warm',    bd: [72, 68, 65, 90], cnt: 98,  pos: 55, neu: 28, neg: 15 },
+      'industry-new-energy':   { name: '新能源',   score: 61, level: 'neutral', bd: [65, 55, 58, 75], cnt: 76,  pos: 38, neu: 25, neg: 13 },
+      'industry-pharma':       { name: '医药',     score: 55, level: 'neutral', bd: [50, 52, 48, 80], cnt: 62,  pos: 28, neu: 22, neg: 12 },
+      'industry-metals':       { name: '有色金属', score: 44, level: 'cool',    bd: [40, 48, 38, 65], cnt: 45,  pos: 18, neu: 16, neg: 11 },
+      'industry-bank':         { name: '银行',     score: 38, level: 'cool',    bd: [35, 40, 30, 70], cnt: 38,  pos: 14, neu: 15, neg: 9  },
+      'industry-realestate':   { name: '房地产',   score: 22, level: 'freezing',bd: [18, 28, 15, 55], cnt: 30,  pos: 5,  neu: 12, neg: 13 },
+    };
+
+    const d = mockMap[industryId];
+    if (!d) return new HttpResponse(null, { status: 404 });
+
+    return HttpResponse.json({
+      id: `temp-${industryId}-${granularity}`,
+      industryId,
+      industryName: d.name,
+      score: d.score,
+      level: d.level,
+      breakdown: {
+        sentimentScore: d.bd[0],
+        volumeAnomalyScore: d.bd[1],
+        spreadIntensityScore: d.bd[2],
+        sourceCredibilityScore: d.bd[3],
+      },
+      contentCount: d.cnt,
+      sentimentDistribution: { positive: d.pos, neutral: d.neu, negative: d.neg },
+      snapshotAt: new Date().toISOString(),
+      granularity,
+    } as TemperatureSnapshot);
   }),
 ];

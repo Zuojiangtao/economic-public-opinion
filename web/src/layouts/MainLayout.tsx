@@ -13,6 +13,7 @@ import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   ApartmentOutlined,
+  FireOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -23,6 +24,7 @@ const menuItems = [
   { key: '/monitoring', icon: <FundProjectionScreenOutlined />, label: '监测方案' },
   { key: '/alerts', icon: <AlertOutlined />, label: '预警中心' },
   { key: '/industry-mappings', icon: <ApartmentOutlined />, label: '行业映射' },
+  { key: '/temperature', icon: <FireOutlined />, label: '行业温度' },
   { key: '/settings', icon: <SettingOutlined />, label: '系统配置' },
 ];
 

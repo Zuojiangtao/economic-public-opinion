@@ -9,6 +9,7 @@ import MonitoringPage from './pages/monitoring';
 import AlertsPage from './pages/alerts';
 import SettingsPage from './pages/settings';
 import IndustryMappingsPage from './pages/industry-mappings';
+import TemperaturePage from './pages/temperature';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ export default function App() {
                 <Route path="/monitoring" element={<MonitoringPage />} />
                 <Route path="/alerts" element={<AlertsPage />} />
                 <Route path="/industry-mappings" element={<IndustryMappingsPage />} />
+                <Route path="/temperature" element={<TemperaturePage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Routes>

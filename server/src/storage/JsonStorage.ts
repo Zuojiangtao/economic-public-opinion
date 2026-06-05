@@ -246,6 +246,10 @@ export class JsonStorage {
     };
   }
 
+  getAll(): ContentItem[] {
+    return Array.from(this.items.values());
+  }
+
   getSize(): number {
     return this.items.size;
   }

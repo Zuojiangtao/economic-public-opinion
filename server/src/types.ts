@@ -112,3 +112,41 @@ export interface IndustryQueryResult {
   matchedTerms: string[];
   relevanceScore: number;
 }
+
+// ==================== Temperature ====================
+
+/** 温度分层 */
+export type TemperatureLevel = 'freezing' | 'cool' | 'neutral' | 'warm' | 'hot';
+
+/** 各分项得分明细 */
+export interface TemperatureBreakdown {
+  /** 情绪得分 0-100，权重 35% */
+  sentimentScore: number;
+  /** 声量异动得分 0-100，权重 25% */
+  volumeAnomalyScore: number;
+  /** 传播热度得分 0-100，权重 20% */
+  spreadIntensityScore: number;
+  /** 来源可信度得分 0-100，权重 20% */
+  sourceCredibilityScore: number;
+}
+
+/** 温度快照（某一时刻某行业的温度计算结果） */
+export interface TemperatureSnapshot {
+  id: string;
+  industryId: string;
+  industryName: string;
+  /** 综合温度分 0-100 */
+  score: number;
+  /** 温度分层 */
+  level: TemperatureLevel;
+  /** 分项贡献 */
+  breakdown: TemperatureBreakdown;
+  /** 命中内容数量 */
+  contentCount: number;
+  /** 正/中/负内容分布 */
+  sentimentDistribution: { positive: number; neutral: number; negative: number };
+  /** 快照时间（小时级或日级） */
+  snapshotAt: string;
+  /** 时间粒度 */
+  granularity: 'hour' | 'day';
+}

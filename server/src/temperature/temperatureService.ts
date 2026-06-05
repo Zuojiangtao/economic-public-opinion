@@ -1,0 +1,168 @@
+import type { ContentItem, SourceType, IndustryMapping, TemperatureSnapshot, TemperatureLevel, TemperatureBreakdown } from '../types.js';
+
+// ============================================================
+// 来源可信度权重（0-100）
+// ============================================================
+const SOURCE_CREDIBILITY: Record<SourceType, number> = {
+  broker: 95,   // 券商研报
+  news: 80,     // 主流新闻
+  app: 70,      // 财经 APP
+  forums: 50,   // 投资论坛
+  social: 40,   // 社交媒体
+};
+
+// ============================================================
+// 温度分层映射
+// ============================================================
+function getLevel(score: number): TemperatureLevel {
+  if (score < 20) return 'freezing';
+  if (score < 40) return 'cool';
+  if (score < 60) return 'neutral';
+  if (score < 80) return 'warm';
+  return 'hot';
+}
+
+// ============================================================
+// 根据行业关键词过滤匹配内容
+// ============================================================
+function getMatchedItems(industry: IndustryMapping, allItems: ContentItem[]): ContentItem[] {
+  // 构建行业关键词集合（关键词 + 同义词 + 股票名称/简称 + 海外映射名称）
+  const terms = new Set<string>();
+  for (const kw of industry.keywords) terms.add(kw.toLowerCase());
+  for (const syn of industry.synonyms) terms.add(syn.toLowerCase());
+  for (const s of industry.stocks) {
+    terms.add(s.name.toLowerCase());
+    if (s.shortName) terms.add(s.shortName.toLowerCase());
+    if (s.englishName) terms.add(s.englishName.toLowerCase());
+    if (s.aliases) for (const a of s.aliases) terms.add(a.toLowerCase());
+    terms.add(s.code.toLowerCase());
+  }
+  for (const om of industry.overseasMappings) {
+    terms.add(om.name.toLowerCase());
+    terms.add(om.code.toLowerCase());
+  }
+  for (const idx of industry.indices) terms.add(idx.toLowerCase());
+
+  return allItems.filter((item) => {
+    const text = `${item.title} ${item.content}`.toLowerCase();
+    for (const term of terms) {
+      if (term && text.includes(term)) return true;
+    }
+    return false;
+  });
+}
+
+// ============================================================
+// 情绪得分 0-100（35%）
+// 将 nlp.sentiment [-1, 1] 映射到 [0, 100]，取命中内容均值
+// ============================================================
+function calcSentimentScore(items: ContentItem[]): number {
+  if (items.length === 0) return 50; // 无数据时取中性值
+  const avg = items.reduce((sum, c) => sum + c.nlp.sentiment, 0) / items.length;
+  // [-1, 1] -> [0, 100]
+  return Math.round(((avg + 1) / 2) * 100);
+}
+
+// ============================================================
+// 声量异动得分 0-100（25%）
+// 相对于所有行业的内容数量做归一化
+// ============================================================
+function calcVolumeAnomalyScore(count: number, allCounts: number[]): number {
+  const max = Math.max(...allCounts);
+  if (max === 0) return 0;
+  // 线性归一化：最多内容的行业得满分
+  return Math.round((count / max) * 100);
+}
+
+// ============================================================
+// 传播热度得分 0-100（20%）
+// 基于点赞/评论/转发/阅读等互动指标加权求和后归一化
+// ============================================================
+function calcSpreadIntensityScore(items: ContentItem[], allMaxEngagement: number): number {
+  if (items.length === 0) return 0;
+  const totalEngagement = items.reduce((sum, c) => {
+    const m = c.metrics;
+    return sum + (m.likes ?? 0) + (m.comments ?? 0) + (m.shares ?? 0) + (m.views ?? 0) * 0.1;
+  }, 0);
+  if (allMaxEngagement === 0) return 0;
+  return Math.round(Math.min(100, (totalEngagement / allMaxEngagement) * 100));
+}
+
+// ============================================================
+// 来源可信度得分 0-100（20%）
+// 按来源类型权重取平均
+// ============================================================
+function calcSourceCredibilityScore(items: ContentItem[]): number {
+  if (items.length === 0) return 60; // 无数据时取保守默认
+  const avg = items.reduce((sum, c) => sum + (SOURCE_CREDIBILITY[c.sourceType] ?? 50), 0) / items.length;
+  return Math.round(avg);
+}
+
+// ============================================================
+// 综合温度公式
+// 板块温度 = 情绪得分*35% + 声量异动*25% + 传播热度*20% + 来源可信度*20%
+// ============================================================
+function calcTemperature(bd: TemperatureBreakdown): number {
+  const score =
+    bd.sentimentScore * 0.35 +
+    bd.volumeAnomalyScore * 0.25 +
+    bd.spreadIntensityScore * 0.20 +
+    bd.sourceCredibilityScore * 0.20;
+  return Math.round(Math.max(0, Math.min(100, score)));
+}
+
+// ============================================================
+// 主入口：为所有行业批量计算温度快照
+// ============================================================
+export function computeTemperatureSnapshots(
+  industries: IndustryMapping[],
+  allItems: ContentItem[],
+  granularity: 'hour' | 'day' = 'hour',
+): TemperatureSnapshot[] {
+  const now = new Date().toISOString();
+
+  // 预先为每个行业收集命中内容
+  const industryItems: ContentItem[][] = industries.map((ind) => getMatchedItems(ind, allItems));
+
+  // 声量: 每个行业的命中数量
+  const counts = industryItems.map((items) => items.length);
+
+  // 传播热度: 每个行业的总互动量，取全局最大值用于归一化
+  const engagements = industryItems.map((items) =>
+    items.reduce((sum, c) => {
+      const m = c.metrics;
+      return sum + (m.likes ?? 0) + (m.comments ?? 0) + (m.shares ?? 0) + (m.views ?? 0) * 0.1;
+    }, 0),
+  );
+  const maxEngagement = Math.max(...engagements, 1);
+
+  return industries.map((industry, i) => {
+    const items = industryItems[i];
+    const count = counts[i];
+
+    const breakdown: TemperatureBreakdown = {
+      sentimentScore: calcSentimentScore(items),
+      volumeAnomalyScore: calcVolumeAnomalyScore(count, counts),
+      spreadIntensityScore: calcSpreadIntensityScore(items, maxEngagement),
+      sourceCredibilityScore: calcSourceCredibilityScore(items),
+    };
+
+    const score = calcTemperature(breakdown);
+
+    const dist = { positive: 0, neutral: 0, negative: 0 };
+    for (const c of items) dist[c.nlp.sentimentLabel]++;
+
+    return {
+      id: `temp-${industry.id}-${granularity}`,
+      industryId: industry.id,
+      industryName: industry.name,
+      score,
+      level: getLevel(score),
+      breakdown,
+      contentCount: count,
+      sentimentDistribution: dist,
+      snapshotAt: now,
+      granularity,
+    } satisfies TemperatureSnapshot;
+  });
+}
