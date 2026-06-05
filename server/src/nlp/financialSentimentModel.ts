@@ -4,12 +4,17 @@
  * 架构：
  *   SentimentModelAdapter（抽象接口）
  *     ├── DictionaryModelAdapter  —— 增强版词典法（默认 baseline）
- *     └── LLMModelAdapter         —— 大模型适配器（预留，需配置 API Key 后启用）
+ *     └── LLMModelAdapter         —— OpenAI 兼容 API（配置三个环境变量后启用）
  *
- * 高影响内容（风险级 >= high 或信号数 >= 5）会被标记 secondaryAnalysis=true，
- * 调用方可选择触发额外处理。
+ * 环境变量（server/.env）：
+ *   LLM_API_KEY    必填，接口鉴权
+ *   LLM_BASE_URL   可选，默认 https://api.openai.com/v1（兼容 DeepSeek/Ollama/Azure 等）
+ *   LLM_MODEL      可选，默认 gpt-4o-mini
+ *
+ * 高影响内容（含风险词或强信号）会被标记 secondaryAnalysis=true。
  */
 
+import axios from 'axios';
 import type {
   FinancialSentimentLabel,
   EnhancedSentimentResult,
@@ -268,23 +273,107 @@ export class DictionaryModelAdapter implements SentimentModelAdapter {
   }
 }
 
-// ─── LLM 适配器（预留存根）────────────────────────────────────────────────────
+// ─── LLM 适配器 ───────────────────────────────────────────────────────────────
+
+const LLM_BASE_URL = process.env['LLM_BASE_URL'] ?? 'https://api.openai.com/v1';
+const LLM_MODEL    = process.env['LLM_MODEL']    ?? 'gpt-4o-mini';
+
+/** OpenAI 兼容接口返回的结构化情绪分析结果（用于 JSON mode 解析） */
+interface LLMSentimentOutput {
+  label: FinancialSentimentLabel;
+  confidence: number;
+  reasoning: string;
+  positiveSignals: string[];
+  negativeSignals: string[];
+  riskSignals: string[];
+  rumorSignals: string[];
+}
+
+const SYSTEM_PROMPT = `你是一位专业的中国金融市场舆情分析师。
+请分析给定文本的金融情绪，输出严格符合以下 JSON 格式的结果，不要包含任何额外文字：
+{
+  "label": "strong_positive|weak_positive|neutral|weak_negative|strong_negative|risk|rumor",
+  "confidence": 0.0~1.0,
+  "reasoning": "判断理由（1-2句话，中文）",
+  "positiveSignals": ["命中的正面关键词"],
+  "negativeSignals": ["命中的负面关键词"],
+  "riskSignals": ["命中的风险关键词"],
+  "rumorSignals": ["命中的传闻关键词"]
+}
+标签说明：strong_positive=强利好, weak_positive=弱利好, neutral=中性,
+weak_negative=弱利空, strong_negative=强利空, risk=风险事件, rumor=未证实传闻`;
 
 /**
- * LLMModelAdapter — 大模型分析适配器（预留，未启用）
- *
- * 当配置 LLM_API_KEY 环境变量后可启用。目前回落到 DictionaryModelAdapter。
- * 接入时只需替换此类的 analyze 实现，其余调用链不变。
+ * LLMModelAdapter — 调用 OpenAI 兼容 API 进行金融情绪分析。
+ * 配置 LLM_API_KEY 后自动启用；调用失败时回落到词典模型。
  */
 export class LLMModelAdapter implements SentimentModelAdapter {
   readonly modelSource: SentimentModelSource = 'llm';
   private fallback = new DictionaryModelAdapter();
+  private readonly apiKey: string;
+
+  constructor(apiKey: string) {
+    this.apiKey = apiKey;
+  }
 
   async analyze(text: string, sourceType?: string): Promise<EnhancedSentimentResult> {
-    // TODO: 当 LLM_API_KEY 配置后，发起 API 请求并解析结构化输出。
-    // 目前回落到词典模型，并标记 modelSource 为 dictionary。
-    const result = await this.fallback.analyze(text, sourceType);
-    return result;
+    try {
+      const userContent = sourceType
+        ? `[来源类型: ${sourceType}]\n${text.slice(0, 1500)}`
+        : text.slice(0, 1500);
+
+      const response = await axios.post<{
+        choices: { message: { content: string } }[];
+      }>(
+        `${LLM_BASE_URL}/chat/completions`,
+        {
+          model: LLM_MODEL,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: SYSTEM_PROMPT },
+            { role: 'user', content: userContent },
+          ],
+          temperature: 0.1,
+          max_tokens: 512,
+        },
+        {
+          headers: { Authorization: `Bearer ${this.apiKey}` },
+          timeout: 15000,
+        },
+      );
+
+      const raw = response.data.choices[0]?.message?.content ?? '{}';
+      const parsed: LLMSentimentOutput = JSON.parse(raw);
+
+      const validLabels: FinancialSentimentLabel[] = [
+        'strong_positive', 'weak_positive', 'neutral',
+        'weak_negative', 'strong_negative', 'risk', 'rumor',
+      ];
+      const label: FinancialSentimentLabel = validLabels.includes(parsed.label)
+        ? parsed.label
+        : 'neutral';
+
+      const isHighImpact =
+        (parsed.riskSignals?.length ?? 0) > 0 ||
+        label === 'risk' ||
+        label === 'strong_negative' ||
+        label === 'strong_positive';
+
+      return {
+        label,
+        confidence: Math.min(1, Math.max(0, parsed.confidence ?? 0.7)),
+        reasoning: parsed.reasoning ?? '',
+        secondaryAnalysis: isHighImpact,
+        modelSource: 'llm',
+        positiveSignals: parsed.positiveSignals ?? [],
+        negativeSignals: parsed.negativeSignals ?? [],
+        riskSignals: parsed.riskSignals ?? [],
+        rumorSignals: parsed.rumorSignals ?? [],
+      };
+    } catch (err) {
+      console.warn('[LLMModelAdapter] API call failed, falling back to dictionary:', err instanceof Error ? err.message : err);
+      return this.fallback.analyze(text, sourceType);
+    }
   }
 }
 
@@ -292,8 +381,10 @@ export class LLMModelAdapter implements SentimentModelAdapter {
 
 const _llmApiKey = process.env['LLM_API_KEY'];
 const _activeAdapter: SentimentModelAdapter = _llmApiKey
-  ? new LLMModelAdapter()
+  ? new LLMModelAdapter(_llmApiKey)
   : new DictionaryModelAdapter();
+
+console.log(`[FinancialSentiment] Active adapter: ${_activeAdapter.modelSource}${_llmApiKey ? ` (${LLM_BASE_URL}, model=${LLM_MODEL})` : ''}`);
 
 /**
  * 分析金融文本情绪（增强版）
