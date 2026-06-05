@@ -5,8 +5,16 @@ import {
   saveMonitoringProjectsMap,
 } from '../storage/monitoringProjectsStore.js';
 import { loadLexicons, saveLexicons } from '../storage/lexiconsStore.js';
+import {
+  loadIndustryMappingsMap,
+  saveIndustryMappingsMap,
+} from '../storage/industryMappingsStore.js';
+import {
+  queryIndustriesByKeywords,
+  queryIndustriesByText,
+} from '../nlp/industryMappingService.js';
 import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
-import type { SourceType, SentimentLabel, RiskLevel, MarketType } from '../types.js';
+import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType } from '../types.js';
 
 export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): Router {
   const router = Router();
@@ -215,6 +223,87 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     const rule = { id: `rule-${Date.now()}`, ...req.body, createdAt: new Date().toISOString() };
     alertRules.push(rule);
     res.status(201).json(rule);
+  });
+
+  // ==================== Industry Mappings ====================
+
+  const industryMappings = loadIndustryMappingsMap();
+
+  router.get('/industry-mappings', (req, res) => {
+    const type = req.query.type as IndustryType | undefined;
+    let items = Array.from(industryMappings.values());
+    if (type) items = items.filter((m) => m.type === type);
+    res.json(items);
+  });
+
+  router.get('/industry-mappings/:id', (req, res) => {
+    const m = industryMappings.get(req.params.id);
+    if (!m) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '行业映射不存在' });
+      return;
+    }
+    res.json(m);
+  });
+
+  router.post('/industry-mappings/query', (req, res) => {
+    const { keywords, text } = req.body as { keywords?: string[]; text?: string };
+    const all = Array.from(industryMappings.values());
+    let results = keywords && keywords.length > 0
+      ? queryIndustriesByKeywords(keywords, all)
+      : [];
+    if (text) {
+      const textResults = queryIndustriesByText(text, all);
+      const merged = new Map(results.map((r) => [r.industry.id, r]));
+      for (const r of textResults) {
+        const existing = merged.get(r.industry.id);
+        if (existing) {
+          existing.relevanceScore += r.relevanceScore;
+          for (const t of r.matchedTerms) {
+            if (!existing.matchedTerms.includes(t)) existing.matchedTerms.push(t);
+          }
+        } else {
+          merged.set(r.industry.id, r);
+        }
+      }
+      results = Array.from(merged.values()).sort((a, b) => b.relevanceScore - a.relevanceScore);
+    }
+    res.json(results);
+  });
+
+  router.post('/industry-mappings', (req, res) => {
+    const id = `industry-${Date.now()}`;
+    const now = new Date().toISOString();
+    const mapping = {
+      id,
+      ...req.body,
+      relatedConcepts: req.body.relatedConcepts || [],
+      stocks: req.body.stocks || [],
+      indices: req.body.indices || [],
+      overseasMappings: req.body.overseasMappings || [],
+      createdAt: now,
+      updatedAt: now,
+    };
+    industryMappings.set(id, mapping);
+    saveIndustryMappingsMap(industryMappings);
+    res.status(201).json(mapping);
+  });
+
+  router.put('/industry-mappings/:id', (req, res) => {
+    const existing = industryMappings.get(req.params.id);
+    if (!existing) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '行业映射不存在' });
+      return;
+    }
+    const updated = { ...existing, ...req.body, id: existing.id, updatedAt: new Date().toISOString() };
+    industryMappings.set(req.params.id, updated);
+    saveIndustryMappingsMap(industryMappings);
+    res.json(updated);
+  });
+
+  router.delete('/industry-mappings/:id', (req, res) => {
+    industryMappings.delete(req.params.id);
+    saveIndustryMappingsMap(industryMappings);
+    res.status(204).end();
   });
 
   // ==================== Lexicons（数据见根目录 data/lexicons.json） ====================

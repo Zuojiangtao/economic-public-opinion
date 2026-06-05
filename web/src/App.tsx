@@ -8,6 +8,7 @@ import SearchPage from './pages/search';
 import MonitoringPage from './pages/monitoring';
 import AlertsPage from './pages/alerts';
 import SettingsPage from './pages/settings';
+import IndustryMappingsPage from './pages/industry-mappings';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,7 @@ export default function App() {
                 <Route path="/search" element={<SearchPage />} />
                 <Route path="/monitoring" element={<MonitoringPage />} />
                 <Route path="/alerts" element={<AlertsPage />} />
+                <Route path="/industry-mappings" element={<IndustryMappingsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
             </Routes>

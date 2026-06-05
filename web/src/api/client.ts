@@ -17,6 +17,10 @@ import type {
   User,
   AlertStatus,
   RiskLevel,
+  IndustryMapping,
+  IndustryMappingInput,
+  IndustryQueryResult,
+  IndustryType,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -106,4 +110,19 @@ export const lexiconsApi = {
     request<LexiconEntry>('/lexicons', { method: 'POST', body: JSON.stringify(data) }),
   delete: (id: string) =>
     request<void>(`/lexicons/${id}`, { method: 'DELETE' }),
+};
+
+export const industryMappingsApi = {
+  list: (type?: IndustryType) =>
+    request<IndustryMapping[]>(`/industry-mappings${type ? `?type=${type}` : ''}`),
+  getById: (id: string) =>
+    request<IndustryMapping>(`/industry-mappings/${id}`),
+  create: (data: IndustryMappingInput) =>
+    request<IndustryMapping>('/industry-mappings', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: IndustryMappingInput) =>
+    request<IndustryMapping>(`/industry-mappings/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) =>
+    request<void>(`/industry-mappings/${id}`, { method: 'DELETE' }),
+  query: (params: { keywords?: string[]; text?: string }) =>
+    request<IndustryQueryResult[]>('/industry-mappings/query', { method: 'POST', body: JSON.stringify(params) }),
 };

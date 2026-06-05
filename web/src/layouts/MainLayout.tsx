@@ -12,6 +12,7 @@ import {
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -21,6 +22,7 @@ const menuItems = [
   { key: '/search', icon: <SearchOutlined />, label: '舆情检索' },
   { key: '/monitoring', icon: <FundProjectionScreenOutlined />, label: '监测方案' },
   { key: '/alerts', icon: <AlertOutlined />, label: '预警中心' },
+  { key: '/industry-mappings', icon: <ApartmentOutlined />, label: '行业映射' },
   { key: '/settings', icon: <SettingOutlined />, label: '系统配置' },
 ];
 

@@ -226,3 +226,58 @@ export interface LoginResponse {
   token: string;
   user: User;
 }
+
+export type IndustryType = 'industry' | 'sector' | 'concept' | 'theme';
+export type ChainPosition = 'upstream' | 'midstream' | 'downstream';
+
+export interface StockMapping {
+  code: string;
+  name: string;
+  shortName?: string;
+  englishName?: string;
+  aliases?: string[];
+  market: MarketType;
+  chainPosition?: ChainPosition;
+}
+
+export interface OverseasMapping {
+  code: string;
+  name: string;
+  market: MarketType;
+  mappedThemes: string[];
+}
+
+export interface IndustryMapping {
+  id: string;
+  name: string;
+  type: IndustryType;
+  description?: string;
+  keywords: string[];
+  synonyms: string[];
+  relatedConcepts: string[];
+  stocks: StockMapping[];
+  indices: string[];
+  overseasMappings: OverseasMapping[];
+  parentId?: string;
+  childIds?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IndustryQueryResult {
+  industry: IndustryMapping;
+  matchedTerms: string[];
+  relevanceScore: number;
+}
+
+export interface IndustryMappingInput {
+  name: string;
+  type: IndustryType;
+  description?: string;
+  keywords: string[];
+  synonyms: string[];
+  relatedConcepts?: string[];
+  stocks?: StockMapping[];
+  indices?: string[];
+  overseasMappings?: OverseasMapping[];
+}
