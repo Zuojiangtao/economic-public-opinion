@@ -277,6 +277,64 @@ export const handlers = [
     return HttpResponse.json({ total: filtered.length, distribution });
   }),
 
+  // T013: 主体相关度 - 单条内容
+  http.get('/api/v1/contents/relevance/batch', async ({ request }) => {
+    await delay(300);
+    const url = new URL(request.url);
+    const industryId = url.searchParams.get('industryId') || 'industry-ai';
+    const limit = parseInt(url.searchParams.get('limit') || '20');
+    const industryNames: Record<string, string> = {
+      'industry-ai': 'AI科技', 'industry-semiconductor': '半导体',
+      'industry-new-energy': '新能源', 'industry-pharma': '医药',
+      'industry-metals': '有色金属', 'industry-bank': '银行',
+      'industry-realestate': '房地产',
+    };
+    const items = contents.slice(0, Math.min(limit, contents.length)).map((c, idx) => ({
+      contentId: c.id,
+      title: c.title,
+      industryId,
+      industryName: industryNames[industryId] ?? industryId,
+      relevanceScore: Math.max(15, 90 - idx * 8),
+      subjectType: (['industry', 'company', 'industry', 'index', 'macro'] as const)[idx % 5],
+      isCoreSubject: idx < 3,
+      isMentionOnly: idx > 7,
+      impactDirectionClear: c.nlp.riskLevel !== 'low',
+      impactCycle: (['short_term', 'long_term', 'unknown'] as const)[idx % 3],
+      matchedTerms: c.nlp.entities.slice(0, 2).map((e) => e.name),
+    }));
+    return HttpResponse.json({ industryId, industryName: industryNames[industryId] ?? industryId, total: items.length, items });
+  }),
+
+  http.get('/api/v1/contents/:id/relevance', async ({ params, request }) => {
+    await delay(250);
+    const item = contents.find((c) => c.id === params.id);
+    if (!item) return new HttpResponse(null, { status: 404 });
+    const url = new URL(request.url);
+    const industryId = url.searchParams.get('industryId');
+    const mockResult = (id: string, name: string, score: number) => ({
+      industryId: id, industryName: name,
+      relevanceScore: score,
+      subjectType: score > 60 ? 'industry' : 'company',
+      isCoreSubject: score >= 60,
+      isMentionOnly: score < 30,
+      impactDirectionClear: item.nlp.riskLevel !== 'low',
+      impactCycle: item.nlp.sentimentLabel !== 'neutral' ? 'short_term' : 'long_term',
+      matchedTerms: item.nlp.entities.slice(0, 2).map((e) => e.name),
+    });
+    if (industryId) {
+      const names: Record<string, string> = {
+        'industry-ai': 'AI科技', 'industry-semiconductor': '半导体',
+        'industry-new-energy': '新能源', 'industry-pharma': '医药',
+      };
+      return HttpResponse.json(mockResult(industryId, names[industryId] ?? industryId, 72));
+    }
+    return HttpResponse.json([
+      mockResult('industry-ai', 'AI科技', 82),
+      mockResult('industry-semiconductor', '半导体', 45),
+      mockResult('industry-new-energy', '新能源', 28),
+    ]);
+  }),
+
   http.get('/api/v1/monitoring-projects', async ({ request }) => {
     await delay(200);
     const url = new URL(request.url);

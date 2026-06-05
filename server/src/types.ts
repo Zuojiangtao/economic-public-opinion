@@ -116,6 +116,33 @@ export interface StructuredEvent {
   summary: string;
 }
 
+// ==================== T013 主体相关度评分 ====================
+
+/** 主体类型 */
+export type SubjectType = 'company' | 'industry' | 'index' | 'macro' | 'commodity';
+/** 影响周期 */
+export type ImpactCycle = 'short_term' | 'long_term' | 'unknown';
+
+/** 单条内容对某个行业/板块的相关度评分结果 */
+export interface IndustryRelevance {
+  industryId: string;
+  industryName: string;
+  /** 相关度得分 0-100 */
+  relevanceScore: number;
+  /** 主体类型：公司/行业/指数/宏观/商品 */
+  subjectType: SubjectType;
+  /** 是否为核心主体（得分 >= 60） */
+  isCoreSubject: boolean;
+  /** 是否只是顺带提及（得分 < 30） */
+  isMentionOnly: boolean;
+  /** 影响方向是否明确 */
+  impactDirectionClear: boolean;
+  /** 影响周期 */
+  impactCycle: ImpactCycle;
+  /** 命中的关键词列表 */
+  matchedTerms: string[];
+}
+
 export interface ContentNlp {
   sentiment: number;
   sentimentLabel: SentimentLabel;
@@ -126,6 +153,8 @@ export interface ContentNlp {
   enhanced?: EnhancedSentimentResult;
   /** T012: 结构化事件识别结果 */
   events?: StructuredEvent[];
+  /** T013: 主体相关度评分（按行业 ID 索引，按需计算填充） */
+  relevance?: Record<string, IndustryRelevance>;
 }
 
 export interface ContentItem {

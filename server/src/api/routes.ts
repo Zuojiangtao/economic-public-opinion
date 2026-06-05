@@ -14,6 +14,7 @@ import {
   queryIndustriesByKeywords,
   queryIndustriesByText,
 } from '../nlp/industryMappingService.js';
+import { scoreRelevance, scoreRelevanceForIndustries } from '../nlp/relevanceService.js';
 import { computeTemperatureSnapshots, computeTemperatureDetail } from '../temperature/temperatureService.js';
 import {
   updateSnapshots,
@@ -231,6 +232,66 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     };
     storage.upsert(updated);
     res.json(events);
+  });
+
+  // ==================== T013 主体相关度评分 ====================
+
+  /**
+   * GET /contents/:id/relevance
+   * 计算指定内容对所有（或指定）行业的相关度评分。
+   * Query: industryId = 仅返回该行业的评分（可选）
+   */
+  router.get('/contents/:id/relevance', (req, res) => {
+    const item = storage.getById(req.params.id);
+    if (!item) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '内容不存在' });
+      return;
+    }
+    const industryId = req.query.industryId as string | undefined;
+    const allIndustries = Array.from(loadIndustryMappingsMap().values());
+
+    if (industryId) {
+      const industry = allIndustries.find((m) => m.id === industryId);
+      if (!industry) {
+        res.status(404).json({ code: 'NOT_FOUND', message: '行业不存在' });
+        return;
+      }
+      res.json(scoreRelevance(item, industry));
+    } else {
+      res.json(scoreRelevanceForIndustries(item, allIndustries));
+    }
+  });
+
+  /**
+   * GET /contents/relevance/batch
+   * 批量计算：对指定行业，返回所有命中内容的相关度评分。
+   * Query: industryId (必须), limit (默认 20)
+   */
+  router.get('/contents/relevance/batch', (req, res) => {
+    const industryId = req.query.industryId as string | undefined;
+    if (!industryId) {
+      res.status(400).json({ code: 'BAD_REQUEST', message: '需要 industryId 参数' });
+      return;
+    }
+    const allIndustries = Array.from(loadIndustryMappingsMap().values());
+    const industry = allIndustries.find((m) => m.id === industryId);
+    if (!industry) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '行业不存在' });
+      return;
+    }
+    const limit = Math.min(100, parseInt(req.query.limit as string) || 20);
+    const allItems = storage.getAll();
+
+    const results = allItems
+      .map((item) => {
+        const r = scoreRelevance(item, industry);
+        return r.matchedTerms.length > 0 ? { contentId: item.id, title: item.title, ...r } : null;
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null)
+      .sort((a, b) => b.relevanceScore - a.relevanceScore)
+      .slice(0, limit);
+
+    res.json({ industryId, industryName: industry.name, total: results.length, items: results });
   });
 
   router.get('/monitoring-projects', (req, res) => {

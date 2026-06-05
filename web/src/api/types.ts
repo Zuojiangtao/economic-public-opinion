@@ -76,7 +76,36 @@ export interface EventDistribution {
   distribution: EventTypeDistributionItem[];
 }
 
-// ==================== Source Configs (T006) ====================
+// ==================== T013 主体相关度评分 ====================
+
+export type SubjectType = 'company' | 'industry' | 'index' | 'macro' | 'commodity';
+export type ImpactCycle = 'short_term' | 'long_term' | 'unknown';
+
+export interface IndustryRelevance {
+  industryId: string;
+  industryName: string;
+  /** 相关度得分 0-100 */
+  relevanceScore: number;
+  /** 主体类型 */
+  subjectType: SubjectType;
+  /** 是否为核心主体（得分 >= 60） */
+  isCoreSubject: boolean;
+  /** 是否只是顺带提及（得分 < 30） */
+  isMentionOnly: boolean;
+  /** 影响方向是否明确 */
+  impactDirectionClear: boolean;
+  /** 影响周期 */
+  impactCycle: ImpactCycle;
+  matchedTerms: string[];
+}
+
+export interface RelevanceBatchResult {
+  industryId: string;
+  industryName: string;
+  total: number;
+  items: Array<IndustryRelevance & { contentId: string; title: string }>;
+}
+
 
 export type AuthorizationStatus = 'authorized' | 'unauthorized' | 'restricted';
 export type AntiCrawlRisk = 'low' | 'medium' | 'high';
@@ -143,6 +172,8 @@ export interface ContentNlp {
   enhanced?: EnhancedSentimentResult;
   /** T012: 结构化事件识别结果 */
   events?: StructuredEvent[];
+  /** T013: 主体相关度（按行业 ID 索引，按需填充） */
+  relevance?: Record<string, IndustryRelevance>;
 }
 
 export interface ContentDedup {
