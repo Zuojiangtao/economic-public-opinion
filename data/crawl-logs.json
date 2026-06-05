@@ -1,0 +1,222 @@
+[
+  {
+    "id": "d71390b1-0b19-4258-89e3-317093219284",
+    "source": "eastmoney",
+    "success": true,
+    "itemsFetched": 50,
+    "itemsAdded": 5,
+    "duration": 378,
+    "crawledAt": "2026-06-05T05:53:27.833Z",
+    "isIncremental": false
+  },
+  {
+    "id": "b3991fc8-37c5-4c27-8410-126b28b4c961",
+    "source": "guba",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 4643,
+    "crawledAt": "2026-06-05T05:53:30.237Z",
+    "isIncremental": false
+  },
+  {
+    "id": "75c22200-2908-4966-aea6-f5bf9b614b93",
+    "source": "xueqiu",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 562,
+    "crawledAt": "2026-06-05T05:53:36.885Z",
+    "isIncremental": false
+  },
+  {
+    "id": "043ad6e5-832e-44c2-be4e-84ae51d4c0c4",
+    "source": "sina_finance",
+    "success": true,
+    "itemsFetched": 90,
+    "itemsAdded": 3,
+    "duration": 4372,
+    "crawledAt": "2026-06-05T05:53:39.460Z",
+    "isIncremental": false
+  },
+  {
+    "id": "bd74ebe5-f0ca-48f5-a7a6-849f81e085d9",
+    "source": "cls",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 445,
+    "crawledAt": "2026-06-05T05:53:45.853Z",
+    "isIncremental": false
+  },
+  {
+    "id": "f131bae7-ebea-43d3-9536-7e8779379a16",
+    "source": "ths",
+    "success": true,
+    "itemsFetched": 30,
+    "itemsAdded": 7,
+    "duration": 98,
+    "crawledAt": "2026-06-05T05:53:48.314Z",
+    "isIncremental": false
+  },
+  {
+    "id": "6d5244a3-f3cc-4c7b-b972-99d4ce3a4e4c",
+    "source": "cs_journal",
+    "success": true,
+    "itemsFetched": 24,
+    "itemsAdded": 0,
+    "duration": 145,
+    "crawledAt": "2026-06-05T05:53:50.425Z",
+    "isIncremental": false
+  },
+  {
+    "id": "4849f0a5-29c5-49d0-9123-bffe8adf9283",
+    "source": "authority_cn",
+    "success": true,
+    "itemsFetched": 40,
+    "itemsAdded": 0,
+    "duration": 8982,
+    "crawledAt": "2026-06-05T05:53:52.576Z",
+    "isIncremental": false
+  },
+  {
+    "id": "48bc2316-d03e-4a63-9ad9-79ebd5acee7f",
+    "source": "broker_research",
+    "success": true,
+    "itemsFetched": 31,
+    "itemsAdded": 0,
+    "duration": 10471,
+    "crawledAt": "2026-06-05T05:54:03.578Z",
+    "isIncremental": false
+  },
+  {
+    "id": "63af3313-03d4-4d44-b4e6-d815078ee0e1",
+    "source": "laohu8",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 1139,
+    "crawledAt": "2026-06-05T05:54:16.065Z",
+    "isIncremental": false
+  },
+  {
+    "id": "dd93857b-197e-49d5-877e-d5d7de84ceb8",
+    "source": "eastmoney",
+    "success": true,
+    "itemsFetched": 50,
+    "itemsAdded": 0,
+    "duration": 386,
+    "crawledAt": "2026-06-05T05:54:54.870Z",
+    "isIncremental": false
+  },
+  {
+    "id": "1658da05-6634-4a7f-af30-e5621d6ab382",
+    "source": "guba",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 4270,
+    "crawledAt": "2026-06-05T05:54:57.279Z",
+    "isIncremental": false
+  },
+  {
+    "id": "ba4c6faa-a0c4-4745-befa-f09ad1d143c2",
+    "source": "xueqiu",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 344,
+    "crawledAt": "2026-06-05T05:55:03.564Z",
+    "isIncremental": false
+  },
+  {
+    "id": "5ad5db04-b094-4970-9a69-babf3523ea0d",
+    "source": "sina_finance",
+    "success": true,
+    "itemsFetched": 90,
+    "itemsAdded": 0,
+    "duration": 4372,
+    "crawledAt": "2026-06-05T05:55:05.914Z",
+    "isIncremental": false
+  },
+  {
+    "id": "ec7832e3-57f5-4edf-a871-eb33300a0540",
+    "source": "cls",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 394,
+    "crawledAt": "2026-06-05T05:55:12.304Z",
+    "isIncremental": false
+  },
+  {
+    "id": "2874c759-8b37-4b26-aa5f-dfc97eebecb3",
+    "source": "ths",
+    "success": true,
+    "itemsFetched": 30,
+    "itemsAdded": 0,
+    "duration": 113,
+    "crawledAt": "2026-06-05T05:55:14.706Z",
+    "isIncremental": false
+  },
+  {
+    "id": "bf2586ad-60ee-4d68-b642-002729160b23",
+    "source": "cs_journal",
+    "success": true,
+    "itemsFetched": 24,
+    "itemsAdded": 0,
+    "duration": 157,
+    "crawledAt": "2026-06-05T05:55:16.840Z",
+    "isIncremental": false
+  },
+  {
+    "id": "6c759dc1-ed5e-4ce9-9eb8-3c05e09718a0",
+    "source": "authority_cn",
+    "success": true,
+    "itemsFetched": 40,
+    "itemsAdded": 0,
+    "duration": 9082,
+    "crawledAt": "2026-06-05T05:55:19.014Z",
+    "isIncremental": false
+  },
+  {
+    "id": "9c6f827f-e587-4859-896a-9fcf4fb1b492",
+    "source": "broker_research",
+    "success": true,
+    "itemsFetched": 31,
+    "itemsAdded": 0,
+    "duration": 10476,
+    "crawledAt": "2026-06-05T05:55:30.115Z",
+    "isIncremental": false
+  },
+  {
+    "id": "6495dcd1-b003-4631-b459-545ebeda9915",
+    "source": "laohu8",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 1047,
+    "crawledAt": "2026-06-05T05:55:42.605Z",
+    "isIncremental": false
+  },
+  {
+    "id": "04f0d788-83df-4c21-942a-f4440226d107",
+    "source": "firstbank",
+    "success": true,
+    "itemsFetched": 6,
+    "itemsAdded": 0,
+    "duration": 5864,
+    "crawledAt": "2026-06-05T05:55:45.661Z",
+    "isIncremental": false
+  },
+  {
+    "id": "09e791d2-daf7-45eb-b413-0145d34c94b0",
+    "source": "stockstar",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 203,
+    "crawledAt": "2026-06-05T05:55:53.532Z",
+    "isIncremental": false
+  }
+]

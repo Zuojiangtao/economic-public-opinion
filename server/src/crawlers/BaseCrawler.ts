@@ -40,6 +40,10 @@ export abstract class BaseCrawler {
       lastSuccess: true,
       totalFetched: 0,
       isRunning: false,
+      totalAttempts: 0,
+      consecutiveFailures: 0,
+      circuitOpen: false,
+      healthScore: 100,
     };
   }
 
@@ -64,7 +68,27 @@ export abstract class BaseCrawler {
       };
     }
 
+    // Circuit breaker check
+    if (this.status.circuitOpen) {
+      const until = this.status.circuitOpenUntil;
+      if (until && new Date(until) > new Date()) {
+        return {
+          source: this.name,
+          items: [],
+          fetchedAt: new Date().toISOString(),
+          success: false,
+          error: `Circuit open until ${until}`,
+          duration: 0,
+        };
+      }
+      // Backoff expired — reset circuit and retry
+      this.status.circuitOpen = false;
+      this.status.circuitOpenUntil = undefined;
+      console.log(`[${this.name}] Circuit closed after backoff, retrying...`);
+    }
+
     this.status.isRunning = true;
+    this.status.totalAttempts += 1;
     const start = Date.now();
     const fetchedAt = new Date().toISOString();
 
@@ -75,7 +99,19 @@ export abstract class BaseCrawler {
       this.status.lastCrawlAt = fetchedAt;
       this.status.lastSuccess = true;
       this.status.lastError = undefined;
+      this.status.consecutiveFailures = 0;
       this.status.totalFetched += items.length;
+
+      // Track newest published item timestamp for incremental crawl reference
+      if (items.length > 0) {
+        const newestAt = items.reduce((latest, item) => {
+          const t = item.publishedAt || item.fetchedAt || '';
+          return t > latest ? t : latest;
+        }, '');
+        if (newestAt) this.status.lastItemAt = newestAt;
+      }
+
+      this.status.healthScore = this.calculateHealthScore();
 
       return {
         source: this.name,
@@ -89,6 +125,21 @@ export abstract class BaseCrawler {
       this.status.lastCrawlAt = fetchedAt;
       this.status.lastSuccess = false;
       this.status.lastError = errorMsg;
+      this.status.consecutiveFailures += 1;
+
+      // Open circuit if consecutive failures exceed threshold
+      const threshold = this.config.circuitBreakerThreshold;
+      if (this.status.consecutiveFailures >= threshold) {
+        const backoffMs = this.config.backoffMinutes * 60 * 1000;
+        this.status.circuitOpen = true;
+        this.status.circuitOpenUntil = new Date(Date.now() + backoffMs).toISOString();
+        console.warn(
+          `[${this.name}] Circuit opened after ${this.status.consecutiveFailures} consecutive failures. ` +
+            `Will retry after ${this.config.backoffMinutes} min (until ${this.status.circuitOpenUntil}).`,
+        );
+      }
+
+      this.status.healthScore = this.calculateHealthScore();
 
       console.error(`[${this.name}] Crawl failed:`, errorMsg);
       return {
@@ -102,6 +153,18 @@ export abstract class BaseCrawler {
     } finally {
       this.status.isRunning = false;
     }
+  }
+
+  /**
+   * 健康度评分 0-100：
+   * - 无连续失败 → 100
+   * - 每次连续失败扣 25 分
+   * - 熔断打开 → 0
+   */
+  private calculateHealthScore(): number {
+    if (this.status.circuitOpen) return 0;
+    const penalty = Math.min(100, this.status.consecutiveFailures * 25);
+    return Math.max(0, 100 - penalty);
   }
 
   private async fetchWithRetry(): Promise<ContentItem[]> {

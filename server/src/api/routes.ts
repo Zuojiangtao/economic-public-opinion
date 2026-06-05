@@ -22,6 +22,7 @@ import {
   getHistory,
 } from '../temperature/temperatureStore.js';
 import { listClusters, getClusterById } from '../dedup/eventClusterStore.js';
+import { queryCrawlLogs } from '../storage/crawlLogsStore.js';
 import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
 import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType } from '../types.js';
 
@@ -161,6 +162,20 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
 
   const alerts = new Map<string, any>();
   initDefaultAlerts(alerts);
+
+  // 注入告警回调到调度器，让爬虫熔断时可自动生成告警（T009）
+  scheduler.setAlertCallback((alertData) => {
+    if (!alerts.has(alertData.id)) {
+      alerts.set(alertData.id, {
+        ...alertData,
+        status: 'pending',
+        ruleName: '爬虫熔断预警',
+        relatedContentIds: [],
+        handleRecords: [],
+      });
+      console.log(`[AlertCallback] Auto-alert created: ${alertData.title}`);
+    }
+  });
 
   router.get('/alerts', (req, res) => {
     const status = req.query.status as string | undefined;
@@ -596,6 +611,58 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     res.json({
       crawlers: scheduler.getStatuses(),
       storageSize: storage.getSize(),
+    });
+  });
+
+  /**
+   * GET /crawlers/logs
+   * 查询采集日志，按 crawledAt 降序返回。
+   * Query:
+   *   source      = 爬虫名称过滤
+   *   success     = true|false 过滤
+   *   startDate   = ISO 日期字符串
+   *   endDate     = ISO 日期字符串
+   *   page        = 页码（默认 1）
+   *   pageSize    = 每页条数（默认 50，最大 200）
+   */
+  router.get('/crawlers/logs', (req, res) => {
+    const result = queryCrawlLogs({
+      source: req.query.source as string | undefined,
+      success: req.query.success === 'true' ? true : req.query.success === 'false' ? false : undefined,
+      startDate: req.query.startDate as string | undefined,
+      endDate: req.query.endDate as string | undefined,
+      page: req.query.page ? parseInt(req.query.page as string) : 1,
+      pageSize: req.query.pageSize ? parseInt(req.query.pageSize as string) : 50,
+    });
+    res.json(result);
+  });
+
+  /**
+   * GET /crawlers/:name/health
+   * 返回单个爬虫的健康状态详情。
+   */
+  router.get('/crawlers/:name/health', (req, res) => {
+    const crawler = scheduler.getCrawler(req.params.name);
+    if (!crawler) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '爬虫不存在' });
+      return;
+    }
+    const status = crawler.getStatus();
+    res.json({
+      name: status.name,
+      sourceName: status.sourceName,
+      enabled: status.enabled,
+      healthScore: status.healthScore,
+      circuitOpen: status.circuitOpen,
+      circuitOpenUntil: status.circuitOpenUntil,
+      consecutiveFailures: status.consecutiveFailures,
+      totalAttempts: status.totalAttempts,
+      totalFetched: status.totalFetched,
+      lastCrawlAt: status.lastCrawlAt,
+      lastSuccess: status.lastSuccess,
+      lastError: status.lastError,
+      lastItemAt: status.lastItemAt,
+      isRunning: status.isRunning,
     });
   });
 

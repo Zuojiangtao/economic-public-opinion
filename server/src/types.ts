@@ -87,6 +87,10 @@ export interface CrawlerConfig {
   userAgent: string;
   timeout: number;
   retries: number;
+  /** 连续失败几次后触发熔断，默认 3 */
+  circuitBreakerThreshold: number;
+  /** 熔断后退避时长（分钟），默认 10 */
+  backoffMinutes: number;
 }
 
 export interface CrawlerStatus {
@@ -98,6 +102,33 @@ export interface CrawlerStatus {
   lastError?: string;
   totalFetched: number;
   isRunning: boolean;
+  /** 累计采集尝试次数（含失败） */
+  totalAttempts: number;
+  /** 连续失败次数，成功后归零 */
+  consecutiveFailures: number;
+  /** 熔断是否打开（过多连续失败时自动开启） */
+  circuitOpen: boolean;
+  /** 熔断截止时间（ISO 字符串），到期后自动重试 */
+  circuitOpenUntil?: string;
+  /** 健康度评分 0-100，基于连续失败和熔断状态 */
+  healthScore: number;
+  /** 上次成功采集的最新条目时间，用于增量采集参考 */
+  lastItemAt?: string;
+}
+
+// ==================== Crawl Logs ====================
+
+export interface CrawlLog {
+  id: string;
+  source: string;
+  success: boolean;
+  itemsFetched: number;
+  itemsAdded: number;
+  error?: string;
+  duration: number;
+  crawledAt: string;
+  /** 是否为增量采集（有 sinceItemAt 参考时间时为 true） */
+  isIncremental: boolean;
 }
 
 export type IndustryType = 'industry' | 'sector' | 'concept' | 'theme';
