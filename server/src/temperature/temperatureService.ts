@@ -1,5 +1,6 @@
-import type { ContentItem, SourceType, SourceConfig, IndustryMapping, TemperatureSnapshot, TemperatureLevel, TemperatureBreakdown, TemperatureDetail, RiskDistribution, TopContentSummary } from '../types.js';
+import type { ContentItem, SourceType, SourceConfig, IndustryMapping, TemperatureSnapshot, TemperatureLevel, TemperatureBreakdown, TemperatureDetail, RiskDistribution, TopContentSummary, EventCluster } from '../types.js';
 import { buildSourceConfigMap, buildSourceTypeCredibility } from '../storage/sourceConfigsStore.js';
+import { getAllClusters } from '../dedup/eventClusterStore.js';
 
 // ============================================================
 // 来源可信度默认值（无配置时的兜底，0-100）
@@ -67,13 +68,31 @@ function calcSentimentScore(items: ContentItem[]): number {
 
 // ============================================================
 // 声量异动得分 0-100（25%）
-// 相对于所有行业的内容数量做归一化
+// T007 升级：使用事件簇数量而非原始内容数量，避免同一事件跨平台
+// 转载后重复放大声量。有事件簇数据时优先使用，否则退化为原始计数。
 // ============================================================
-function calcVolumeAnomalyScore(count: number, allCounts: number[]): number {
-  const max = Math.max(...allCounts);
+function calcVolumeAnomalyScore(clusterCount: number, allClusterCounts: number[]): number {
+  const max = Math.max(...allClusterCounts);
   if (max === 0) return 0;
-  // 线性归一化：最多内容的行业得满分
-  return Math.round((count / max) * 100);
+  return Math.round((clusterCount / max) * 100);
+}
+
+/**
+ * 根据行业命中内容 ID 集合，统计涉及的不同事件簇数量。
+ * 若一条内容尚未聚类（dedup.clusterId 为空），则视为独立事件（簇数 +1）。
+ */
+function countClusters(items: ContentItem[], allClusters: Map<string, EventCluster>): number {
+  const clusterIds = new Set<string>();
+  for (const item of items) {
+    const cid = item.dedup?.clusterId;
+    if (cid && allClusters.has(cid)) {
+      clusterIds.add(cid);
+    } else {
+      // 未聚类的内容视为独立事件
+      clusterIds.add(`__solo__${item.id}`);
+    }
+  }
+  return clusterIds.size;
 }
 
 // ============================================================
@@ -155,11 +174,17 @@ export function computeTemperatureSnapshots(
   const sourceConfigMap = sourceConfigs ? buildSourceConfigMap(sourceConfigs) : undefined;
   const sourceTypeCredibility = sourceConfigs ? buildSourceTypeCredibility(sourceConfigs) : undefined;
 
+  // T007：建立事件簇索引，用于声量去重
+  const allClusters = new Map(getAllClusters().map((c) => [c.id, c]));
+
   // 预先为每个行业收集命中内容
   const industryItems: ContentItem[][] = industries.map((ind) => getMatchedItems(ind, allItems));
 
   // 声量: 每个行业的命中数量
   const counts = industryItems.map((items) => items.length);
+
+  // T007 声量（事件簇级别，去重后）
+  const clusterCounts = industryItems.map((items) => countClusters(items, allClusters));
 
   // 传播热度: 每个行业的总互动量，取全局最大值用于归一化
   const engagements = industryItems.map((items) =>
@@ -176,7 +201,7 @@ export function computeTemperatureSnapshots(
 
     const breakdown: TemperatureBreakdown = {
       sentimentScore: calcSentimentScore(items),
-      volumeAnomalyScore: calcVolumeAnomalyScore(count, counts),
+      volumeAnomalyScore: calcVolumeAnomalyScore(clusterCounts[i], clusterCounts),
       spreadIntensityScore: calcSpreadIntensityScore(items, maxEngagement),
       sourceCredibilityScore: calcSourceCredibilityScore(items, sourceConfigMap, sourceTypeCredibility),
     };
@@ -218,8 +243,12 @@ export function computeTemperatureDetail(
   const sourceConfigMap = sourceConfigs ? buildSourceConfigMap(sourceConfigs) : undefined;
   const sourceTypeCredibility = sourceConfigs ? buildSourceTypeCredibility(sourceConfigs) : undefined;
 
+  // T007：建立事件簇索引，用于声量去重
+  const allClusters = new Map(getAllClusters().map((c) => [c.id, c]));
+
   // 需要全局信息以归一化（单行业场景退化为自身归一化）
   const count = items.length;
+  const clusterCount = countClusters(items, allClusters);
   const engagements = items.map((c) => {
     const m = c.metrics;
     return (m.likes ?? 0) + (m.comments ?? 0) + (m.shares ?? 0) + (m.views ?? 0) * 0.1;
@@ -229,7 +258,8 @@ export function computeTemperatureDetail(
 
   const breakdown: TemperatureBreakdown = {
     sentimentScore: calcSentimentScore(items),
-    volumeAnomalyScore: count > 0 ? 50 : 0, // 单行业无法归一化，使用中位值
+    // T007：声量使用事件簇数，单行业场景以自身归一化，保留中位值语义
+    volumeAnomalyScore: clusterCount > 0 ? Math.min(100, Math.round((clusterCount / Math.max(count, 1)) * 100 + 20)) : 0,
     spreadIntensityScore: Math.round(Math.min(100, (totalEngagement / maxEngagement) * 100)),
     sourceCredibilityScore: calcSourceCredibilityScore(items, sourceConfigMap, sourceTypeCredibility),
   };

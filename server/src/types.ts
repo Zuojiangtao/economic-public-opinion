@@ -256,3 +256,37 @@ export interface TemperatureDetail extends TemperatureSnapshot {
   riskDistribution: RiskDistribution;
   topContents: TopContentSummary[];
 }
+
+// ==================== Event Clusters (T007) ====================
+
+/**
+ * 事件簇：将跨平台、跨来源的相似内容归并为同一事件。
+ * 温度计算以事件簇为单位聚合声量，避免同一事件多平台转载后
+ * 重复放大影响力。
+ */
+export interface EventCluster {
+  /** 唯一标识，格式 cluster-<hash> */
+  id: string;
+  /** 代表性内容 ID（最早或互动量最高） */
+  representativeId: string;
+  /** 簇内所有内容 ID */
+  itemIds: string[];
+  /** 涉及的不同来源名称列表 */
+  sourceNames: string[];
+  /** 不同来源数量 */
+  sourceCount: number;
+  /** 聚合总互动量（likes + comments + shares + views*0.1） */
+  totalEngagement: number;
+  /** 情绪均值 [-1, 1] */
+  avgSentiment: number;
+  /** 主要情绪标签（占比最大） */
+  dominantSentiment: SentimentLabel;
+  /** 最高风险等级 */
+  maxRiskLevel: RiskLevel;
+  /** 代表性标题（来自代表内容） */
+  title: string;
+  /** 首次出现时间 */
+  firstSeenAt: string;
+  /** 最后更新时间 */
+  lastSeenAt: string;
+}

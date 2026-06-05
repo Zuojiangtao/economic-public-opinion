@@ -21,6 +21,7 @@ import {
   pushToHistory,
   getHistory,
 } from '../temperature/temperatureStore.js';
+import { listClusters, getClusterById } from '../dedup/eventClusterStore.js';
 import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
 import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType } from '../types.js';
 
@@ -396,6 +397,71 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     };
     saveSourceConfigs(sourceConfigs);
     res.json(sourceConfigs[idx]);
+  });
+
+  // ==================== Event Clusters (T007) ====================
+
+  /**
+   * GET /event-clusters
+   * 返回事件簇列表，按聚合互动量降序排列。
+   * Query:
+   *   page            = 页码（默认 1）
+   *   pageSize        = 每页条数（默认 20，最大 100）
+   *   minSourceCount  = 至少涉及来源数（过滤跨平台事件）
+   *   maxRiskLevel    = 风险等级下限（low|medium|high|critical）
+   *   sortBy          = totalEngagement|sourceCount|firstSeenAt|lastSeenAt
+   *   sortOrder       = asc|desc
+   */
+  router.get('/event-clusters', (req, res) => {
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string) || 20));
+    const minSourceCount = req.query.minSourceCount ? parseInt(req.query.minSourceCount as string) : undefined;
+    const maxRiskLevel = req.query.maxRiskLevel as string | undefined;
+    const sortBy = (['totalEngagement', 'sourceCount', 'firstSeenAt', 'lastSeenAt'] as const)
+      .find((v) => v === req.query.sortBy) ?? 'totalEngagement';
+    const sortOrder = req.query.sortOrder === 'asc' ? 'asc' : 'desc';
+
+    const result = listClusters({ page, pageSize, minSourceCount, maxRiskLevel, sortBy, sortOrder });
+    res.json(result);
+  });
+
+  /**
+   * GET /event-clusters/:id
+   * 返回单个事件簇详情，附带簇内每条内容的摘要。
+   */
+  router.get('/event-clusters/:id', (req, res) => {
+    const cluster = getClusterById(req.params.id);
+    if (!cluster) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '事件簇不存在' });
+      return;
+    }
+    // 附带每条内容摘要（id/title/sourceName/publishedAt/sentiment/riskLevel/url）
+    const itemSummaries = cluster.itemIds.map((itemId) => {
+      const item = storage.getById(itemId);
+      if (!item) return null;
+      return {
+        id: item.id,
+        title: item.title,
+        sourceName: item.sourceName,
+        sourceType: item.sourceType,
+        publishedAt: item.publishedAt,
+        sentiment: item.nlp.sentimentLabel,
+        riskLevel: item.nlp.riskLevel,
+        url: item.url,
+      };
+    }).filter(Boolean);
+
+    res.json({ ...cluster, items: itemSummaries });
+  });
+
+  /**
+   * POST /event-clusters/refresh
+   * 触发一次全量重新聚类（管理员操作，生产环境可接入权限控制）。
+   */
+  router.post('/event-clusters/refresh', (_req, res) => {
+    storage.runDedup();
+    const result = listClusters({ page: 1, pageSize: 1 });
+    res.json({ message: '重新聚类完成', total: result.total });
   });
 
   // ==================== Temperatures ====================

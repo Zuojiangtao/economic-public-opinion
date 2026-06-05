@@ -8,6 +8,8 @@ import type {
   MarketType,
 } from '../types.js';
 import { DATA_DIR } from '../config.js';
+import { clusterItems } from '../dedup/dedupService.js';
+import { replaceAll, upsertClusters } from '../dedup/eventClusterStore.js';
 
 interface PaginatedResult {
   items: ContentItem[];
@@ -78,10 +80,23 @@ export class JsonStorage {
           this.items.set(item.id, item);
         }
         console.log(`[Storage] Loaded ${this.items.size} items from disk`);
+        // 初始化时对全量数据聚类
+        this.runDedup();
       }
     } catch (err) {
       console.error('[Storage] Failed to load data:', err);
     }
+  }
+
+  /**
+   * 对全量内容重新聚类并更新事件簇缓存。
+   * 全量替换（replaceAll），适合初始化或低频全量刷新场景。
+   */
+  runDedup(): void {
+    const all = Array.from(this.items.values());
+    const clusters = clusterItems(all);
+    replaceAll(clusters);
+    console.log(`[Dedup] Clustered ${all.length} items into ${clusters.length} event clusters`);
   }
 
   save() {
@@ -97,16 +112,24 @@ export class JsonStorage {
 
   addItems(items: ContentItem[]): number {
     let added = 0;
+    const newItems: ContentItem[] = [];
     for (const item of items) {
       if (!this.items.has(item.id)) {
         const existing = this.findByUrl(item.url);
         if (!existing) {
           this.items.set(item.id, item);
+          newItems.push(item);
           added++;
         }
       }
     }
-    if (added > 0) this.dirty = true;
+    if (added > 0) {
+      this.dirty = true;
+      // 对新增内容做增量聚类（与已有内容一起重新聚类代价太高，
+      // 这里仅对新批次内容自身做簇，再 upsert 到全局缓存）
+      const newClusters = clusterItems(newItems);
+      upsertClusters(newClusters);
+    }
     return added;
   }
 
