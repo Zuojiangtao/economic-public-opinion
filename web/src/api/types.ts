@@ -39,15 +39,6 @@ export interface SourceConfigUpdateInput {
   availabilityStatus?: AvailabilityStatus;
   description?: string;
 }
-export type SentimentLabel = 'positive' | 'neutral' | 'negative';
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
-export type MarketType = 'cn' | 'hk' | 'us';
-export type AlertStatus = 'pending' | 'processing' | 'resolved' | 'ignored';
-export type AlertAction = 'start_processing' | 'resolve' | 'ignore' | 'reopen';
-export type MonitoringStatus = 'active' | 'paused' | 'archived';
-export type UserRole = 'admin' | 'analyst' | 'operator';
-export type LexiconCategory = 'brand' | 'competitor' | 'risk' | 'synonym' | 'stop';
-export type EntityType = 'company' | 'person' | 'product' | 'industry' | 'index';
 
 export interface User {
   id: string;
@@ -235,10 +226,22 @@ export interface Alert {
   riskLevel: RiskLevel;
   status: AlertStatus;
   ruleName: string;
+  ruleId?: string;
   triggeredAt: string;
   relatedContentIds: string[];
   relatedContents?: ContentItem[];
   handleRecords: AlertHandleRecord[];
+  /** T010: 可追溯的触发详情 */
+  triggerMeta?: {
+    industryId?: string;
+    industryName?: string;
+    currentTemperature?: number;
+    previousTemperature?: number;
+    temperatureRise?: number;
+    brokerNegativeRatio?: number;
+    negativeVolumeCount?: number;
+    avgSentiment?: number;
+  };
 }
 
 export interface AlertHandleInput {
@@ -252,6 +255,18 @@ export interface AlertRuleConditions {
   riskLevelAbove?: RiskLevel;
   volumeThreshold?: number;
   sourceTypes?: string[];
+  /** T010: 行业温度过热阈值（0-100） */
+  temperatureAbove?: number;
+  /** T010: 行业温度快速升温阈值（绝对分值） */
+  temperatureRiseAbove?: number;
+  /** T010: 研报负面比例阈值（0-1） */
+  brokerNegativeRatioAbove?: number;
+  /** T010: 负面声量增长率阈值（%） */
+  negativeVolumeRiseAbove?: number;
+  /** T010: 限定触发范围的行业 ID 列表 */
+  industryIds?: string[];
+  /** T010: 检测时间窗口（分钟），默认 120 */
+  windowMinutes?: number;
 }
 
 export interface AlertRule {
@@ -261,6 +276,7 @@ export interface AlertRule {
   enabled: boolean;
   conditions: AlertRuleConditions;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface AlertRuleInput {

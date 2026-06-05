@@ -24,7 +24,8 @@ import {
 import { listClusters, getClusterById } from '../dedup/eventClusterStore.js';
 import { queryCrawlLogs } from '../storage/crawlLogsStore.js';
 import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
-import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType } from '../types.js';
+import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType, AlertRule, Alert, AlertStatus } from '../types.js';
+import { evaluateAlertRules } from '../alerts/alertEvaluationService.js';
 
 export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): Router {
   const router = Router();
@@ -160,7 +161,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
 
   // ==================== Alerts (in-memory) ====================
 
-  const alerts = new Map<string, any>();
+  const alerts = new Map<string, Alert>();
   initDefaultAlerts(alerts);
 
   // 注入告警回调到调度器，让爬虫熔断时可自动生成告警（T009）
@@ -186,6 +187,8 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     let items = Array.from(alerts.values());
     if (status) items = items.filter((a) => a.status === status);
     if (riskLevel) items = items.filter((a) => a.riskLevel === riskLevel);
+    // 按触发时间降序
+    items.sort((a, b) => b.triggeredAt.localeCompare(a.triggeredAt));
 
     const start = (page - 1) * pageSize;
     res.json({
@@ -211,13 +214,13 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       res.status(404).json({ code: 'NOT_FOUND', message: '预警不存在' });
       return;
     }
-    const statusMap: Record<string, string> = {
+    const statusMap: Record<string, AlertStatus> = {
       start_processing: 'processing',
       resolve: 'resolved',
       ignore: 'ignored',
       reopen: 'pending',
     };
-    a.status = statusMap[req.body.action] || a.status;
+    a.status = statusMap[req.body.action] ?? a.status;
     a.handleRecords = a.handleRecords || [];
     a.handleRecords.push({
       handler: '管理员',
@@ -228,20 +231,64 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     res.json(a);
   });
 
-  // ==================== Alert Rules (in-memory) ====================
+  // ==================== Alert Rules (in-memory, T010 升级版) ====================
 
-  const alertRules: any[] = [
+  const alertRules: AlertRule[] = [
     {
-      id: 'rule-001', name: '负面声量突增预警', description: '当负面内容数量在2小时内增长超过100%时触发',
-      enabled: true, conditions: { sentimentBelow: -0.3, volumeThreshold: 100 }, createdAt: '2026-01-01T00:00:00Z',
+      id: 'rule-001',
+      name: '负面声量突增预警',
+      description: '当负面内容数量在2小时内增长超过100%时触发',
+      enabled: true,
+      conditions: { negativeVolumeRiseAbove: 100, sourceTypes: ['news', 'forums', 'social'], windowMinutes: 120 },
+      createdAt: '2026-01-01T00:00:00Z',
     },
     {
-      id: 'rule-002', name: '情绪阈值预警', description: '当监测方案内平均情绪指数低于设定阈值时触发',
-      enabled: true, conditions: { sentimentBelow: -0.5 }, createdAt: '2026-01-01T00:00:00Z',
+      id: 'rule-002',
+      name: '情绪阈值预警',
+      description: '当监测内容平均情绪指数低于设定阈值时触发',
+      enabled: true,
+      conditions: { sentimentBelow: -0.5, windowMinutes: 120 },
+      createdAt: '2026-01-01T00:00:00Z',
     },
     {
-      id: 'rule-003', name: '高风险内容预警', description: '当出现高风险或极高风险级别内容时立即触发',
-      enabled: true, conditions: { riskLevelAbove: 'high' }, createdAt: '2026-01-01T00:00:00Z',
+      id: 'rule-003',
+      name: '高风险内容预警',
+      description: '当出现高风险或极高风险级别内容时立即触发',
+      enabled: true,
+      conditions: { riskLevelAbove: 'high', windowMinutes: 60 },
+      createdAt: '2026-01-01T00:00:00Z',
+    },
+    {
+      id: 'rule-004',
+      name: '风险词命中预警',
+      description: '当内容命中风险词库中的关键词时触发',
+      enabled: true,
+      conditions: { keywords: ['暴雷', '违约', '跑路', '崩盘', '做空', '债务危机'], windowMinutes: 120 },
+      createdAt: '2026-02-01T00:00:00Z',
+    },
+    {
+      id: 'rule-005',
+      name: '行业温度过热预警',
+      description: '当某行业温度指数超过80分时触发过热预警',
+      enabled: true,
+      conditions: { temperatureAbove: 80, windowMinutes: 60 },
+      createdAt: '2026-03-01T00:00:00Z',
+    },
+    {
+      id: 'rule-006',
+      name: '行业温度快速升温预警',
+      description: '当某行业温度指数在相邻两个快照之间上升超过15分时触发',
+      enabled: true,
+      conditions: { temperatureRiseAbove: 15, windowMinutes: 60 },
+      createdAt: '2026-03-01T00:00:00Z',
+    },
+    {
+      id: 'rule-007',
+      name: '研报观点集中转向预警',
+      description: '当近2小时内研报负面观点占比超过50%时触发',
+      enabled: true,
+      conditions: { brokerNegativeRatioAbove: 0.5, windowMinutes: 120 },
+      createdAt: '2026-03-01T00:00:00Z',
     },
   ];
 
@@ -250,10 +297,92 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
   });
 
   router.post('/alert-rules', (req, res) => {
-    const rule = { id: `rule-${Date.now()}`, ...req.body, createdAt: new Date().toISOString() };
+    const rule: AlertRule = {
+      id: `rule-${Date.now()}`,
+      name: req.body.name,
+      description: req.body.description || '',
+      enabled: req.body.enabled ?? true,
+      conditions: req.body.conditions || {},
+      createdAt: new Date().toISOString(),
+    };
     alertRules.push(rule);
     res.status(201).json(rule);
   });
+
+  router.put('/alert-rules/:id', (req, res) => {
+    const idx = alertRules.findIndex((r) => r.id === req.params.id);
+    if (idx === -1) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '规则不存在' });
+      return;
+    }
+    const updated: AlertRule = {
+      ...alertRules[idx],
+      ...req.body,
+      id: alertRules[idx].id,
+      createdAt: alertRules[idx].createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    alertRules[idx] = updated;
+    res.json(updated);
+  });
+
+  router.delete('/alert-rules/:id', (req, res) => {
+    const idx = alertRules.findIndex((r) => r.id === req.params.id);
+    if (idx === -1) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '规则不存在' });
+      return;
+    }
+    alertRules.splice(idx, 1);
+    res.status(204).end();
+  });
+
+  /** POST /alert-rules/:id/toggle — 快捷启停规则 */
+  router.post('/alert-rules/:id/toggle', (req, res) => {
+    const idx = alertRules.findIndex((r) => r.id === req.params.id);
+    if (idx === -1) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '规则不存在' });
+      return;
+    }
+    alertRules[idx] = {
+      ...alertRules[idx],
+      enabled: req.body.enabled ?? !alertRules[idx].enabled,
+      updatedAt: new Date().toISOString(),
+    };
+    res.json(alertRules[idx]);
+  });
+
+  /**
+   * POST /alerts/evaluate
+   * 手动触发一次预警规则计算（供管理员/调试使用）。
+   * 返回本次新增的预警列表。
+   */
+  router.post('/alerts/evaluate', (_req, res) => {
+    const newAlerts = runAlertEvaluation();
+    res.json({ triggered: newAlerts.length, alerts: newAlerts });
+  });
+
+  /** 执行预警评估，将新预警写入 alerts Map，返回新增预警 */
+  function runAlertEvaluation(): Alert[] {
+    const allItems = storage.getAll();
+    const newAlerts = evaluateAlertRules(alertRules, allItems);
+    for (const a of newAlerts) {
+      alerts.set(a.id, a);
+      console.log(`[AlertEval] Triggered: [${a.riskLevel}] ${a.title}`);
+    }
+    return newAlerts;
+  }
+
+  // 每 5 分钟自动执行一次预警评估（T010 自动预警计算任务）
+  const EVAL_INTERVAL_MS = 5 * 60 * 1000;
+  const evalTimer = setInterval(() => {
+    try {
+      runAlertEvaluation();
+    } catch (err) {
+      console.error('[AlertEval] Evaluation error:', err);
+    }
+  }, EVAL_INTERVAL_MS);
+  // Node.js 中 unref() 使定时器不阻止进程退出
+  if (evalTimer.unref) evalTimer.unref();
 
   // ==================== Industry Mappings ====================
 
@@ -692,8 +821,8 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
   return router;
 }
 
-function initDefaultAlerts(alerts: Map<string, any>) {
-  const defaults = [
+function initDefaultAlerts(alerts: Map<string, Alert>) {
+  const defaults: Alert[] = [
     {
       id: 'alert-001', title: '负面舆情激增预警', description: '过去2小时内负面内容激增',
       riskLevel: 'critical', status: 'pending', ruleName: '负面声量突增预警',

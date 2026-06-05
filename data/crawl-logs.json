@@ -218,5 +218,255 @@
     "duration": 203,
     "crawledAt": "2026-06-05T05:55:53.532Z",
     "isIncremental": false
+  },
+  {
+    "id": "2f9336d6-ad49-4c67-b654-6236955ab19c",
+    "source": "cls",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 429,
+    "crawledAt": "2026-06-05T05:59:54.877Z",
+    "isIncremental": false
+  },
+  {
+    "id": "420cd6bb-aad9-4aac-8f20-a6864a5a3451",
+    "source": "eastmoney",
+    "success": true,
+    "itemsFetched": 50,
+    "itemsAdded": 9,
+    "duration": 463,
+    "crawledAt": "2026-06-05T06:04:36.292Z",
+    "isIncremental": false
+  },
+  {
+    "id": "3f76a6cc-124f-41b9-86bd-240f91d12079",
+    "source": "guba",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 4498,
+    "crawledAt": "2026-06-05T06:04:38.781Z",
+    "isIncremental": false
+  },
+  {
+    "id": "373ccf4a-5e75-4b44-8bc7-c78bc1c0d8c9",
+    "source": "xueqiu",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 639,
+    "crawledAt": "2026-06-05T06:04:45.285Z",
+    "isIncremental": false
+  },
+  {
+    "id": "746ac1fb-8429-43ab-8916-a5178507a275",
+    "source": "sina_finance",
+    "success": true,
+    "itemsFetched": 90,
+    "itemsAdded": 2,
+    "duration": 4449,
+    "crawledAt": "2026-06-05T06:04:47.927Z",
+    "isIncremental": false
+  },
+  {
+    "id": "53e62feb-0f8c-4bed-9fa7-0f77bfdbc644",
+    "source": "cls",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 385,
+    "crawledAt": "2026-06-05T06:04:54.397Z",
+    "isIncremental": false
+  },
+  {
+    "id": "6be04dcd-3abb-4fc6-912d-e1fb860b4726",
+    "source": "ths",
+    "success": true,
+    "itemsFetched": 30,
+    "itemsAdded": 9,
+    "duration": 106,
+    "crawledAt": "2026-06-05T06:04:56.785Z",
+    "isIncremental": false
+  },
+  {
+    "id": "98b964f4-ce08-4279-82bd-990bf19d522d",
+    "source": "cs_journal",
+    "success": true,
+    "itemsFetched": 24,
+    "itemsAdded": 0,
+    "duration": 176,
+    "crawledAt": "2026-06-05T06:04:58.906Z",
+    "isIncremental": false
+  },
+  {
+    "id": "690bf847-9285-4b2e-a282-ba6010faaa5c",
+    "source": "authority_cn",
+    "success": true,
+    "itemsFetched": 40,
+    "itemsAdded": 0,
+    "duration": 8970,
+    "crawledAt": "2026-06-05T06:05:01.142Z",
+    "isIncremental": false
+  },
+  {
+    "id": "3445e82f-8387-4320-a8bd-4ccaa641cc67",
+    "source": "broker_research",
+    "success": true,
+    "itemsFetched": 31,
+    "itemsAdded": 0,
+    "duration": 10552,
+    "crawledAt": "2026-06-05T06:05:12.126Z",
+    "isIncremental": false
+  },
+  {
+    "id": "c2b288d6-4d03-4513-8b3c-a4c16186c667",
+    "source": "laohu8",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 1285,
+    "crawledAt": "2026-06-05T06:05:24.686Z",
+    "isIncremental": false
+  },
+  {
+    "id": "608653a7-ab2d-4b09-b06d-0dfe760279e8",
+    "source": "firstbank",
+    "success": true,
+    "itemsFetched": 6,
+    "itemsAdded": 0,
+    "duration": 6889,
+    "crawledAt": "2026-06-05T06:05:27.978Z",
+    "isIncremental": false
+  },
+  {
+    "id": "851c2a71-01cf-4163-9e7d-002ade077131",
+    "source": "stockstar",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 284,
+    "crawledAt": "2026-06-05T06:05:36.875Z",
+    "isIncremental": false
+  },
+  {
+    "id": "b8df9c25-7018-434c-8409-118dbffd5db0",
+    "source": "eastmoney",
+    "success": true,
+    "itemsFetched": 50,
+    "itemsAdded": 3,
+    "duration": 416,
+    "crawledAt": "2026-06-05T06:06:34.535Z",
+    "isIncremental": false
+  },
+  {
+    "id": "0a5d35b2-190e-4d48-9861-039102271849",
+    "source": "guba",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 4285,
+    "crawledAt": "2026-06-05T06:06:36.980Z",
+    "isIncremental": false
+  },
+  {
+    "id": "274eb61e-3bc7-40da-94ff-db8f1bad07f7",
+    "source": "xueqiu",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 496,
+    "crawledAt": "2026-06-05T06:06:43.277Z",
+    "isIncremental": false
+  },
+  {
+    "id": "d2cb7186-2526-4348-9221-04eb47bdde56",
+    "source": "sina_finance",
+    "success": true,
+    "itemsFetched": 90,
+    "itemsAdded": 0,
+    "duration": 4434,
+    "crawledAt": "2026-06-05T06:06:45.779Z",
+    "isIncremental": false
+  },
+  {
+    "id": "e2148a4e-f1ba-4861-bcae-b4764c9a701b",
+    "source": "cls",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 405,
+    "crawledAt": "2026-06-05T06:06:52.241Z",
+    "isIncremental": false
+  },
+  {
+    "id": "e8066067-5203-4e25-9ec2-cb65f637a3d5",
+    "source": "ths",
+    "success": true,
+    "itemsFetched": 30,
+    "itemsAdded": 1,
+    "duration": 100,
+    "crawledAt": "2026-06-05T06:06:54.659Z",
+    "isIncremental": false
+  },
+  {
+    "id": "1704da62-1505-4b64-bd99-00270affc914",
+    "source": "cs_journal",
+    "success": true,
+    "itemsFetched": 24,
+    "itemsAdded": 0,
+    "duration": 118,
+    "crawledAt": "2026-06-05T06:06:56.767Z",
+    "isIncremental": false
+  },
+  {
+    "id": "2710a3c6-8d23-4467-8bd5-01d7455e7ae5",
+    "source": "authority_cn",
+    "success": true,
+    "itemsFetched": 40,
+    "itemsAdded": 0,
+    "duration": 8902,
+    "crawledAt": "2026-06-05T06:06:58.893Z",
+    "isIncremental": false
+  },
+  {
+    "id": "2de23532-a2f6-408c-8739-4f10d8ed2041",
+    "source": "broker_research",
+    "success": true,
+    "itemsFetched": 31,
+    "itemsAdded": 0,
+    "duration": 10466,
+    "crawledAt": "2026-06-05T06:07:09.811Z",
+    "isIncremental": false
+  },
+  {
+    "id": "013659c7-a1bf-4480-ac12-0eed169ef82b",
+    "source": "laohu8",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 1041,
+    "crawledAt": "2026-06-05T06:07:22.287Z",
+    "isIncremental": false
+  },
+  {
+    "id": "ba06c11d-1977-46c4-a566-031571c50371",
+    "source": "firstbank",
+    "success": true,
+    "itemsFetched": 6,
+    "itemsAdded": 0,
+    "duration": 3211,
+    "crawledAt": "2026-06-05T06:07:25.342Z",
+    "isIncremental": false
+  },
+  {
+    "id": "f05e9709-cdf3-4a73-815b-28b7cda7e9d0",
+    "source": "stockstar",
+    "success": true,
+    "itemsFetched": 0,
+    "itemsAdded": 0,
+    "duration": 161,
+    "crawledAt": "2026-06-05T06:07:30.564Z",
+    "isIncremental": false
   }
 ]

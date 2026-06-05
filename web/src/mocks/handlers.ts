@@ -18,9 +18,6 @@ import type {
   TemperatureDetail,
   TemperatureLevel,
   SourceConfig,
-  AuthorizationStatus,
-  AntiCrawlRisk,
-  AvailabilityStatus,
 } from '../api/types';
 
 let contents = [...mockContents];
@@ -223,8 +220,14 @@ export const handlers = [
       name: body.name || '新方案',
       description: body.description || '',
       status: body.status || 'active',
-      keywords: body.keywords || { include: [], exclude: [] },
+      targetType: body.targetType || 'industry',
+      targetIds: body.targetIds || [],
+      keywords: body.keywords || { core: [], extended: [], exclude: [] },
       sourceTypes: body.sourceTypes || ['news'],
+      sourceWeights: body.sourceWeights || [],
+      temperatureThreshold: body.temperatureThreshold ?? 70,
+      alertThreshold: body.alertThreshold ?? 85,
+      outputCycle: body.outputCycle || 'realtime',
       sentimentThreshold: body.sentimentThreshold,
       riskThreshold: body.riskThreshold,
       hitCount: 0,
@@ -325,6 +328,46 @@ export const handlers = [
     };
     alertRules.push(newRule);
     return HttpResponse.json(newRule, { status: 201 });
+  }),
+
+  http.put('/api/v1/alert-rules/:id', async ({ params, request }) => {
+    await delay(300);
+    const idx = alertRules.findIndex((r) => r.id === params.id);
+    if (idx === -1) return new HttpResponse(null, { status: 404 });
+    const body = (await request.json()) as Partial<AlertRule>;
+    alertRules[idx] = {
+      ...alertRules[idx],
+      ...body,
+      id: alertRules[idx].id,
+      createdAt: alertRules[idx].createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    return HttpResponse.json(alertRules[idx]);
+  }),
+
+  http.delete('/api/v1/alert-rules/:id', async ({ params }) => {
+    await delay(200);
+    alertRules = alertRules.filter((r) => r.id !== params.id);
+    return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post('/api/v1/alert-rules/:id/toggle', async ({ params, request }) => {
+    await delay(200);
+    const idx = alertRules.findIndex((r) => r.id === params.id);
+    if (idx === -1) return new HttpResponse(null, { status: 404 });
+    const body = (await request.json()) as { enabled?: boolean };
+    alertRules[idx] = {
+      ...alertRules[idx],
+      enabled: body.enabled ?? !alertRules[idx].enabled,
+      updatedAt: new Date().toISOString(),
+    };
+    return HttpResponse.json(alertRules[idx]);
+  }),
+
+  http.post('/api/v1/alerts/evaluate', async () => {
+    await delay(500);
+    // Mock evaluation: return simulated newly triggered alerts
+    return HttpResponse.json({ triggered: 0, alerts: [] });
   }),
 
   // Lexicons

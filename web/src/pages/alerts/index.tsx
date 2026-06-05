@@ -24,7 +24,7 @@ import {
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { alertsApi, alertRulesApi } from '../../api/client';
-import type { Alert, AlertStatus, RiskLevel, AlertRule } from '../../api/types';
+import type { Alert, AlertStatus, AlertAction, RiskLevel, AlertRule } from '../../api/types';
 
 const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
   pending: { text: '待处理', color: 'red', icon: <ExclamationCircleOutlined /> },
@@ -60,7 +60,7 @@ export default function AlertsPage() {
 
   const handleMutation = useMutation({
     mutationFn: ({ id, action, note }: { id: string; action: string; note?: string }) =>
-      alertsApi.handle(id, { action: action as Alert['status'], note }),
+      alertsApi.handle(id, { action: action as AlertAction, note }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
       message.success('操作成功');

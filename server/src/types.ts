@@ -321,3 +321,73 @@ export interface EventCluster {
   /** 最后更新时间 */
   lastSeenAt: string;
 }
+
+// ==================== Alerts (T010) ====================
+
+export type AlertStatus = 'pending' | 'processing' | 'resolved' | 'ignored';
+export type AlertAction = 'start_processing' | 'resolve' | 'ignore' | 'reopen';
+
+export interface AlertHandleRecord {
+  handler: string;
+  action: string;
+  note: string;
+  timestamp: string;
+}
+
+/** 预警规则触发条件（T010 升级版） */
+export interface AlertRuleConditions {
+  /** 风险关键词命中，匹配内容标题或正文 */
+  keywords?: string[];
+  /** 平均情绪指数低于此值时触发（[-1, 1]） */
+  sentimentBelow?: number;
+  /** 出现此级别及以上风险内容时触发 */
+  riskLevelAbove?: RiskLevel;
+  /** 负面声量突增：负面内容数量在时间窗口内增长率（%）超过此值触发 */
+  negativeVolumeRiseAbove?: number;
+  /** 过滤来源类型，为空时不过滤 */
+  sourceTypes?: SourceType[];
+  /** 行业温度超过此值时触发（过热预警，0-100） */
+  temperatureAbove?: number;
+  /** 行业温度涨幅超过此值时触发（快速升温，绝对分值）*/
+  temperatureRiseAbove?: number;
+  /** 研报负面比例超过此值时触发（0-1，研报观点集中转向） */
+  brokerNegativeRatioAbove?: number;
+  /** 限定触发范围的行业 ID 列表，为空则对所有行业生效 */
+  industryIds?: string[];
+  /** 检测时间窗口（分钟），默认 120 */
+  windowMinutes?: number;
+}
+
+export interface AlertRule {
+  id: string;
+  name: string;
+  description: string;
+  enabled: boolean;
+  conditions: AlertRuleConditions;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface Alert {
+  id: string;
+  title: string;
+  description: string;
+  riskLevel: RiskLevel;
+  status: AlertStatus;
+  ruleName: string;
+  ruleId?: string;
+  triggeredAt: string;
+  relatedContentIds: string[];
+  handleRecords: AlertHandleRecord[];
+  /** 触发详情，供可追溯性使用 */
+  triggerMeta?: {
+    industryId?: string;
+    industryName?: string;
+    currentTemperature?: number;
+    previousTemperature?: number;
+    temperatureRise?: number;
+    brokerNegativeRatio?: number;
+    negativeVolumeCount?: number;
+    avgSentiment?: number;
+  };
+}

@@ -110,9 +110,9 @@ export const mockAlertRules: AlertRule[] = [
     description: '当负面内容数量在2小时内增长超过100%时触发',
     enabled: true,
     conditions: {
-      sentimentBelow: -0.3,
-      volumeThreshold: 100,
+      negativeVolumeRiseAbove: 100,
       sourceTypes: ['news', 'forums', 'social'],
+      windowMinutes: 120,
     },
     createdAt: '2026-01-01T00:00:00Z',
   },
@@ -123,6 +123,7 @@ export const mockAlertRules: AlertRule[] = [
     enabled: true,
     conditions: {
       sentimentBelow: -0.5,
+      windowMinutes: 120,
     },
     createdAt: '2026-01-01T00:00:00Z',
   },
@@ -133,6 +134,7 @@ export const mockAlertRules: AlertRule[] = [
     enabled: true,
     conditions: {
       riskLevelAbove: 'high',
+      windowMinutes: 60,
     },
     createdAt: '2026-01-01T00:00:00Z',
   },
@@ -142,19 +144,42 @@ export const mockAlertRules: AlertRule[] = [
     description: '当内容命中风险词库中的关键词时触发',
     enabled: true,
     conditions: {
-      keywords: ['暴雷', '违约', '跑路', '崩盘', '做空'],
+      keywords: ['暴雷', '违约', '跑路', '崩盘', '做空', '债务危机'],
+      windowMinutes: 120,
     },
     createdAt: '2026-02-01T00:00:00Z',
   },
   {
     id: 'rule-005',
-    name: '声量异常预警',
-    description: '当某主题讨论量超过日均值3倍时触发',
-    enabled: false,
+    name: '行业温度过热预警',
+    description: '当某行业温度指数超过80分时触发过热预警',
+    enabled: true,
     conditions: {
-      volumeThreshold: 300,
-      sourceTypes: ['forums', 'social'],
+      temperatureAbove: 80,
+      windowMinutes: 60,
     },
-    createdAt: '2026-02-15T00:00:00Z',
+    createdAt: '2026-03-01T00:00:00Z',
+  },
+  {
+    id: 'rule-006',
+    name: '行业温度快速升温预警',
+    description: '当某行业温度指数在相邻两个快照之间上升超过15分时触发',
+    enabled: true,
+    conditions: {
+      temperatureRiseAbove: 15,
+      windowMinutes: 60,
+    },
+    createdAt: '2026-03-01T00:00:00Z',
+  },
+  {
+    id: 'rule-007',
+    name: '研报观点集中转向预警',
+    description: '当近2小时内研报负面观点占比超过50%时触发',
+    enabled: true,
+    conditions: {
+      brokerNegativeRatioAbove: 0.5,
+      windowMinutes: 120,
+    },
+    createdAt: '2026-03-01T00:00:00Z',
   },
 ];

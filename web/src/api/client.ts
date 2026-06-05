@@ -109,6 +109,14 @@ export const alertRulesApi = {
   list: () => request<AlertRule[]>('/alert-rules'),
   create: (data: AlertRuleInput) =>
     request<AlertRule>('/alert-rules', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: AlertRuleInput) =>
+    request<AlertRule>(`/alert-rules/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) =>
+    request<void>(`/alert-rules/${id}`, { method: 'DELETE' }),
+  toggle: (id: string, enabled?: boolean) =>
+    request<AlertRule>(`/alert-rules/${id}/toggle`, { method: 'POST', body: JSON.stringify({ enabled }) }),
+  evaluate: () =>
+    request<{ triggered: number; alerts: Alert[] }>('/alerts/evaluate', { method: 'POST' }),
 };
 
 export const lexiconsApi = {
