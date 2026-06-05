@@ -50,7 +50,10 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       project && monitoringProjectId
         ? {
             sourceTypes: (project.sourceTypes || []) as SourceType[],
-            include: project.keywords?.include ?? [],
+            include: [
+              ...(project.keywords?.core ?? project.keywords?.include ?? []),
+              ...(project.keywords?.extended ?? []),
+            ],
             exclude: project.keywords?.exclude ?? [],
           }
         : undefined;

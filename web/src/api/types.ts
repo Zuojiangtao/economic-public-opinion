@@ -114,10 +114,25 @@ export interface ContentStats {
   topEntities: { name: string; type: string; count: number }[];
 }
 
+export type MonitorTargetType = 'industry' | 'sector' | 'concept' | 'stock_pool' | 'index';
+export type OutputCycle = 'realtime' | 'hourly' | 'daily';
+
+export interface SourceWeightConfig {
+  sourceType: SourceType;
+  /** 0.0 ~ 1.0 */
+  weight: number;
+  enabled: boolean;
+}
+
 export interface MonitoringKeywords {
-  include: string[];
+  /** 核心词 */
+  core: string[];
+  /** 扩展词 */
+  extended: string[];
+  /** 排除词 */
   exclude: string[];
-  synonyms?: { word: string; alternatives: string[] }[];
+  /** @deprecated backward compat */
+  include?: string[];
 }
 
 export interface MonitoringProject {
@@ -125,9 +140,21 @@ export interface MonitoringProject {
   name: string;
   description: string;
   status: MonitoringStatus;
+  /** 监测对象类型 */
+  targetType: MonitorTargetType;
+  /** 关联的行业/板块/概念/指数 ID 列表 */
+  targetIds: string[];
   keywords: MonitoringKeywords;
   sourceTypes: SourceType[];
+  sourceWeights: SourceWeightConfig[];
+  /** 温度预警阈值 0-100 */
+  temperatureThreshold: number;
+  /** 紧急预警阈值 0-100 */
+  alertThreshold: number;
+  outputCycle: OutputCycle;
+  /** @deprecated legacy */
   sentimentThreshold?: number;
+  /** @deprecated legacy */
   riskThreshold?: RiskLevel;
   hitCount: number;
   createdAt: string;
@@ -138,11 +165,18 @@ export interface MonitoringProjectInput {
   name: string;
   description?: string;
   status?: 'active' | 'paused';
+  targetType?: MonitorTargetType;
+  targetIds?: string[];
   keywords?: {
-    include?: string[];
+    core?: string[];
+    extended?: string[];
     exclude?: string[];
   };
   sourceTypes?: SourceType[];
+  sourceWeights?: SourceWeightConfig[];
+  temperatureThreshold?: number;
+  alertThreshold?: number;
+  outputCycle?: OutputCycle;
   sentimentThreshold?: number;
   riskThreshold?: RiskLevel;
 }

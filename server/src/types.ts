@@ -113,7 +113,57 @@ export interface IndustryQueryResult {
   relevanceScore: number;
 }
 
+// ==================== Monitoring Projects ====================
+
+export type MonitorTargetType = 'industry' | 'sector' | 'concept' | 'stock_pool' | 'index';
+export type OutputCycle = 'realtime' | 'hourly' | 'daily';
+
+export interface SourceWeightConfig {
+  sourceType: SourceType;
+  /** 0.0 ~ 1.0 */
+  weight: number;
+  enabled: boolean;
+}
+
+export interface MonitoringProjectKeywords {
+  /** 核心词（主要匹配） */
+  core: string[];
+  /** 扩展词（辅助匹配） */
+  extended: string[];
+  /** 排除词 */
+  exclude: string[];
+  /** @deprecated backward compat, treated as core */
+  include?: string[];
+}
+
+export interface MonitoringProject {
+  id: string;
+  name: string;
+  description: string;
+  status: 'active' | 'paused' | 'archived';
+  /** 监测对象类型 */
+  targetType: MonitorTargetType;
+  /** 关联的行业/板块/概念/指数 ID 列表 */
+  targetIds: string[];
+  keywords: MonitoringProjectKeywords;
+  sourceTypes: SourceType[];
+  sourceWeights: SourceWeightConfig[];
+  /** 温度预警阈值 0-100 */
+  temperatureThreshold: number;
+  /** 紧急预警阈值 0-100 */
+  alertThreshold: number;
+  outputCycle: OutputCycle;
+  /** @deprecated legacy */
+  sentimentThreshold?: number;
+  /** @deprecated legacy */
+  riskThreshold?: RiskLevel;
+  hitCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 // ==================== Temperature ====================
+
 
 /** 温度分层 */
 export type TemperatureLevel = 'freezing' | 'cool' | 'neutral' | 'warm' | 'hot';
