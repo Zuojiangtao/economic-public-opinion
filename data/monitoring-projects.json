@@ -146,5 +146,30 @@
     "updatedAt": "2026-03-26T09:13:46.020Z",
     "sentimentThreshold": 0,
     "riskThreshold": "high"
+  },
+  {
+    "id": "project-1776412943669",
+    "name": "半导体芯片",
+    "description": "监测半导体芯片的市场趋势",
+    "status": "active",
+    "keywords": {
+      "include": [
+        "半导体",
+        "芯片",
+        "存储"
+      ],
+      "exclude": []
+    },
+    "sourceTypes": [
+      "news",
+      "forums",
+      "social",
+      "broker",
+      "app"
+    ],
+    "riskThreshold": "high",
+    "hitCount": 0,
+    "createdAt": "2026-04-17T08:02:23.669Z",
+    "updatedAt": "2026-04-17T08:02:23.669Z"
   }
 ]
