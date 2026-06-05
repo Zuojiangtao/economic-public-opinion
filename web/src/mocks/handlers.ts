@@ -15,6 +15,7 @@ import type {
   AlertStatus,
   LexiconCategory,
   TemperatureSnapshot,
+  TemperatureDetail,
   TemperatureLevel,
 } from '../api/types';
 
@@ -398,6 +399,56 @@ export const handlers = [
       sentimentDistribution: { positive: d.pos, neutral: d.neu, negative: d.neg },
       snapshotAt: new Date().toISOString(),
       granularity,
-    } as TemperatureSnapshot);
+      riskDistribution: { low: Math.round(d.cnt * 0.5), medium: Math.round(d.cnt * 0.3), high: Math.round(d.cnt * 0.15), critical: Math.round(d.cnt * 0.05) },
+      topContents: [
+        { id: 'c1', title: `${d.name}板块重大政策利好，多股涨停`, sourceType: 'news' as const, sourceName: '财联社', publishedAt: new Date(Date.now() - 3600000).toISOString(), sentiment: 'positive' as const, riskLevel: 'low' as const, url: '#' },
+        { id: 'c2', title: `机构密集调研${d.name}龙头企业`, sourceType: 'broker' as const, sourceName: '中信证券', publishedAt: new Date(Date.now() - 7200000).toISOString(), sentiment: 'positive' as const, riskLevel: 'low' as const, url: '#' },
+        { id: 'c3', title: `${d.name}监管风险提示：部分企业违规被查`, sourceType: 'news' as const, sourceName: '证券时报', publishedAt: new Date(Date.now() - 10800000).toISOString(), sentiment: 'negative' as const, riskLevel: 'high' as const, url: '#' },
+        { id: 'c4', title: `社区热帖：${d.name}短期调整空间分析`, sourceType: 'forums' as const, sourceName: '雪球', publishedAt: new Date(Date.now() - 14400000).toISOString(), sentiment: 'neutral' as const, riskLevel: 'medium' as const, url: '#' },
+        { id: 'c5', title: `${d.name}产业链景气度跟踪报告`, sourceType: 'broker' as const, sourceName: '华泰证券', publishedAt: new Date(Date.now() - 18000000).toISOString(), sentiment: 'positive' as const, riskLevel: 'low' as const, url: '#' },
+      ],
+    } as TemperatureDetail);
+  }),
+
+  // Temperature trend
+  http.get('/api/v1/temperatures/:industryId/trend', async ({ params, request }) => {
+    await delay(200);
+    const url = new URL(request.url);
+    const granularity = (url.searchParams.get('granularity') || 'hour') as 'hour' | 'day';
+    const limit = parseInt(url.searchParams.get('limit') || '24');
+    const industryId = params.industryId as string;
+
+    const baseScores: Record<string, number> = {
+      'industry-ai': 82, 'industry-semiconductor': 74, 'industry-new-energy': 61,
+      'industry-pharma': 55, 'industry-metals': 44, 'industry-bank': 38, 'industry-realestate': 22,
+    };
+    const names: Record<string, string> = {
+      'industry-ai': 'AI科技', 'industry-semiconductor': '半导体', 'industry-new-energy': '新能源',
+      'industry-pharma': '医药', 'industry-metals': '有色金属', 'industry-bank': '银行', 'industry-realestate': '房地产',
+    };
+    const base = baseScores[industryId] ?? 50;
+    const getLevel = (s: number): TemperatureLevel => s < 20 ? 'freezing' : s < 40 ? 'cool' : s < 60 ? 'neutral' : s < 80 ? 'warm' : 'hot';
+
+    const now = Date.now();
+    const intervalMs = granularity === 'hour' ? 3600000 : 86400000;
+    const count = Math.min(limit, 24);
+
+    const items: TemperatureSnapshot[] = Array.from({ length: count }, (_, i) => {
+      const score = Math.max(0, Math.min(100, base + Math.round((Math.random() - 0.5) * 20)));
+      return {
+        id: `temp-${industryId}-${granularity}-${i}`,
+        industryId,
+        industryName: names[industryId] ?? industryId,
+        score,
+        level: getLevel(score),
+        breakdown: { sentimentScore: score, volumeAnomalyScore: score - 5, spreadIntensityScore: score - 10, sourceCredibilityScore: 75 },
+        contentCount: Math.round(base * 1.2 + Math.random() * 20),
+        sentimentDistribution: { positive: Math.round(score * 0.8), neutral: 20, negative: Math.round((100 - score) * 0.3) },
+        snapshotAt: new Date(now - (count - 1 - i) * intervalMs).toISOString(),
+        granularity,
+      };
+    });
+
+    return HttpResponse.json({ industryId, industryName: names[industryId] ?? industryId, granularity, items, total: items.length });
   }),
 ];

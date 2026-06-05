@@ -200,3 +200,29 @@ export interface TemperatureSnapshot {
   /** 时间粒度 */
   granularity: 'hour' | 'day';
 }
+
+/** 风险内容分布 */
+export interface RiskDistribution {
+  low: number;
+  medium: number;
+  high: number;
+  critical: number;
+}
+
+/** 关键驱动内容摘要（用于温度详情） */
+export interface TopContentSummary {
+  id: string;
+  title: string;
+  sourceType: SourceType;
+  sourceName: string;
+  publishedAt: string;
+  sentiment: SentimentLabel;
+  riskLevel: RiskLevel;
+  url: string;
+}
+
+/** 行业温度详情（快照 + 风险分布 + 关键内容） */
+export interface TemperatureDetail extends TemperatureSnapshot {
+  riskDistribution: RiskDistribution;
+  topContents: TopContentSummary[];
+}

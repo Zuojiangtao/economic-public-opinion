@@ -12,6 +12,8 @@ import {
   Descriptions,
   Statistic,
   Empty,
+  List,
+  Badge,
 } from 'antd';
 import {
   FireOutlined,
@@ -19,11 +21,12 @@ import {
   MinusCircleOutlined,
   ArrowDownOutlined,
   SnippetsOutlined,
+  LinkOutlined,
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import { temperaturesApi } from '@/api/client.ts';
-import type { TemperatureSnapshot, TemperatureLevel } from '@/api/types.ts';
+import type { TemperatureSnapshot, TemperatureLevel, TemperatureDetail } from '@/api/types.ts';
 
 // ============================================================
 // 温度分层展示配置
@@ -112,17 +115,42 @@ function TemperatureCard({
 }
 
 // ============================================================
+// 情绪/风险标签颜色
+// ============================================================
+const sentimentColor: Record<string, string> = { positive: 'green', neutral: 'blue', negative: 'red' };
+const sentimentLabel: Record<string, string> = { positive: '正面', neutral: '中性', negative: '负面' };
+const riskColor: Record<string, string> = { low: 'green', medium: 'orange', high: 'red', critical: 'volcano' };
+const riskLabel: Record<string, string> = { low: '低', medium: '中', high: '高', critical: '极高' };
+
+// ============================================================
 // 详情抽屉
 // ============================================================
 function TemperatureDetailDrawer({
   snap,
+  granularity,
   onClose,
 }: {
   snap: TemperatureSnapshot | null;
+  granularity: 'hour' | 'day';
   onClose: () => void;
 }) {
+  // 拉取详情（含风险分布 + 关键内容）
+  const { data: detail } = useQuery<TemperatureDetail>({
+    queryKey: ['temperature-detail', snap?.industryId, granularity],
+    queryFn: () => temperaturesApi.getDetail(snap!.industryId, granularity),
+    enabled: !!snap,
+  });
+
+  // 拉取历史趋势
+  const { data: trend } = useQuery({
+    queryKey: ['temperature-trend', snap?.industryId, granularity],
+    queryFn: () => temperaturesApi.getTrend(snap!.industryId, { granularity, limit: 24 }),
+    enabled: !!snap,
+  });
+
   if (!snap) return null;
   const cfg = levelConfig[snap.level];
+  const d = detail ?? snap as Partial<TemperatureDetail>;
 
   const breakdownOption = {
     tooltip: { trigger: 'axis' as const },
@@ -170,6 +198,50 @@ function TemperatureDetailDrawer({
     ],
   };
 
+  const riskPieOption = d.riskDistribution
+    ? {
+        tooltip: { trigger: 'item' as const },
+        series: [
+          {
+            type: 'pie',
+            radius: ['40%', '65%'],
+            data: [
+              { value: d.riskDistribution.low,      name: '低风险',  itemStyle: { color: '#52c41a' } },
+              { value: d.riskDistribution.medium,   name: '中风险',  itemStyle: { color: '#fa8c16' } },
+              { value: d.riskDistribution.high,     name: '高风险',  itemStyle: { color: '#ff4d4f' } },
+              { value: d.riskDistribution.critical, name: '极高风险',itemStyle: { color: '#820014' } },
+            ],
+          },
+        ],
+      }
+    : null;
+
+  const trendItems = trend?.items ?? [];
+  const trendLineOption = trendItems.length > 1
+    ? {
+        tooltip: { trigger: 'axis' as const },
+        grid: { left: 40, right: 16, top: 20, bottom: 40 },
+        xAxis: {
+          type: 'category' as const,
+          data: trendItems.map((s) =>
+            new Date(s.snapshotAt).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+          ),
+          axisLabel: { rotate: 40, fontSize: 10 },
+        },
+        yAxis: { type: 'value' as const, min: 0, max: 100 },
+        series: [
+          {
+            type: 'line',
+            smooth: true,
+            data: trendItems.map((s) => s.score),
+            lineStyle: { color: cfg.color },
+            itemStyle: { color: cfg.color },
+            areaStyle: { color: `${cfg.color}22` },
+          },
+        ],
+      }
+    : null;
+
   return (
     <Drawer
       title={
@@ -178,7 +250,7 @@ function TemperatureDetailDrawer({
           <Tag color={cfg.tagColor} icon={cfg.icon}>{cfg.label}</Tag>
         </span>
       }
-      width={480}
+      width={520}
       open={!!snap}
       onClose={onClose}
       destroyOnHidden
@@ -196,11 +268,29 @@ function TemperatureDetailDrawer({
         </Col>
       </Row>
 
-      <Typography.Title level={5} style={{ marginTop: 20 }}>分项雷达图</Typography.Title>
+      {/* 历史趋势折线图 */}
+      {trendLineOption && (
+        <>
+          <Typography.Title level={5} style={{ marginTop: 20 }}>温度历史趋势</Typography.Title>
+          <ReactECharts option={trendLineOption} style={{ height: 180 }} />
+        </>
+      )}
+
+      <Typography.Title level={5} style={{ marginTop: 16 }}>分项雷达图</Typography.Title>
       <ReactECharts option={breakdownOption} style={{ height: 240 }} />
 
-      <Typography.Title level={5} style={{ marginTop: 8 }}>情绪分布</Typography.Title>
-      <ReactECharts option={sentimentPieOption} style={{ height: 200 }} />
+      <Row gutter={12}>
+        <Col span={12}>
+          <Typography.Title level={5} style={{ marginTop: 8 }}>情绪分布</Typography.Title>
+          <ReactECharts option={sentimentPieOption} style={{ height: 180 }} />
+        </Col>
+        {riskPieOption && (
+          <Col span={12}>
+            <Typography.Title level={5} style={{ marginTop: 8 }}>风险分布</Typography.Title>
+            <ReactECharts option={riskPieOption} style={{ height: 180 }} />
+          </Col>
+        )}
+      </Row>
 
       <Typography.Title level={5} style={{ marginTop: 8 }}>分项明细</Typography.Title>
       <Descriptions column={2} size="small" bordered>
@@ -218,6 +308,39 @@ function TemperatureDetailDrawer({
         </Descriptions.Item>
       </Descriptions>
 
+      {/* 关键驱动内容 */}
+      {d.topContents && d.topContents.length > 0 && (
+        <>
+          <Typography.Title level={5} style={{ marginTop: 16 }}>关键驱动内容</Typography.Title>
+          <List
+            size="small"
+            dataSource={d.topContents}
+            renderItem={(item) => (
+              <List.Item style={{ padding: '8px 0' }}>
+                <div style={{ width: '100%' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <Typography.Text style={{ flex: 1, marginRight: 8, fontSize: 13 }} ellipsis>
+                      <a href={item.url} target="_blank" rel="noreferrer" style={{ color: 'inherit' }}>
+                        <LinkOutlined style={{ marginRight: 4, opacity: 0.5 }} />
+                        {item.title}
+                      </a>
+                    </Typography.Text>
+                    <Badge color={riskColor[item.riskLevel]} text={riskLabel[item.riskLevel]} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, fontSize: 11, color: '#999' }}>
+                    <Tag style={{ fontSize: 11, margin: 0 }} color={sentimentColor[item.sentiment]}>
+                      {sentimentLabel[item.sentiment]}
+                    </Tag>
+                    <span>{item.sourceName}</span>
+                    <span>{new Date(item.publishedAt).toLocaleString('zh-CN')}</span>
+                  </div>
+                </div>
+              </List.Item>
+            )}
+          />
+        </>
+      )}
+
       <Typography.Text type="secondary" style={{ display: 'block', marginTop: 16, fontSize: 12 }}>
         快照时间：{new Date(snap.snapshotAt).toLocaleString('zh-CN')}
       </Typography.Text>
@@ -234,7 +357,7 @@ export default function TemperaturePage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['temperatures', granularity],
-    queryFn: () => temperaturesApi.list(granularity),
+    queryFn: () => temperaturesApi.list({ granularity }),
   });
 
   const items = data?.items ?? [];
@@ -339,7 +462,7 @@ export default function TemperaturePage() {
         </div>
       )}
 
-      <TemperatureDetailDrawer snap={selectedSnap} onClose={() => setSelectedSnap(null)} />
+      <TemperatureDetailDrawer snap={selectedSnap} granularity={granularity} onClose={() => setSelectedSnap(null)} />
     </div>
   );
 }

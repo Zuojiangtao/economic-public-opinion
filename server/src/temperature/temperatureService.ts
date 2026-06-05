@@ -1,4 +1,4 @@
-import type { ContentItem, SourceType, IndustryMapping, TemperatureSnapshot, TemperatureLevel, TemperatureBreakdown } from '../types.js';
+import type { ContentItem, SourceType, IndustryMapping, TemperatureSnapshot, TemperatureLevel, TemperatureBreakdown, TemperatureDetail, RiskDistribution, TopContentSummary } from '../types.js';
 
 // ============================================================
 // 来源可信度权重（0-100）
@@ -165,4 +165,78 @@ export function computeTemperatureSnapshots(
       granularity,
     } satisfies TemperatureSnapshot;
   });
+}
+
+// ============================================================
+// 计算单个行业的温度详情（含风险分布 + 关键驱动内容）
+// ============================================================
+export function computeTemperatureDetail(
+  industry: IndustryMapping,
+  allItems: ContentItem[],
+  granularity: 'hour' | 'day' = 'hour',
+  topN = 5,
+): TemperatureDetail {
+  const now = new Date().toISOString();
+  const items = getMatchedItems(industry, allItems);
+
+  // 需要全局信息以归一化（单行业场景退化为自身归一化）
+  const count = items.length;
+  const engagements = items.map((c) => {
+    const m = c.metrics;
+    return (m.likes ?? 0) + (m.comments ?? 0) + (m.shares ?? 0) + (m.views ?? 0) * 0.1;
+  });
+  const maxEngagement = Math.max(...engagements, 1);
+  const totalEngagement = engagements.reduce((s, e) => s + e, 0);
+
+  const breakdown: TemperatureBreakdown = {
+    sentimentScore: calcSentimentScore(items),
+    volumeAnomalyScore: count > 0 ? 50 : 0, // 单行业无法归一化，使用中位值
+    spreadIntensityScore: Math.round(Math.min(100, (totalEngagement / maxEngagement) * 100)),
+    sourceCredibilityScore: calcSourceCredibilityScore(items),
+  };
+
+  const score = calcTemperature(breakdown);
+
+  const sentimentDistribution = { positive: 0, neutral: 0, negative: 0 };
+  const riskDistribution: RiskDistribution = { low: 0, medium: 0, high: 0, critical: 0 };
+  for (const c of items) {
+    sentimentDistribution[c.nlp.sentimentLabel]++;
+    riskDistribution[c.nlp.riskLevel]++;
+  }
+
+  // 关键驱动内容：高风险优先，互动量次之，取前 topN 条
+  const sortedItems = [...items].sort((a, b) => {
+    const riskOrder: Record<string, number> = { critical: 4, high: 3, medium: 2, low: 1 };
+    const riskDiff = (riskOrder[b.nlp.riskLevel] ?? 0) - (riskOrder[a.nlp.riskLevel] ?? 0);
+    if (riskDiff !== 0) return riskDiff;
+    const aEng = (a.metrics.likes ?? 0) + (a.metrics.comments ?? 0) + (a.metrics.shares ?? 0);
+    const bEng = (b.metrics.likes ?? 0) + (b.metrics.comments ?? 0) + (b.metrics.shares ?? 0);
+    return bEng - aEng;
+  });
+
+  const topContents: TopContentSummary[] = sortedItems.slice(0, topN).map((c) => ({
+    id: c.id,
+    title: c.title,
+    sourceType: c.sourceType,
+    sourceName: c.sourceName,
+    publishedAt: c.publishedAt,
+    sentiment: c.nlp.sentimentLabel,
+    riskLevel: c.nlp.riskLevel,
+    url: c.url,
+  }));
+
+  return {
+    id: `temp-${industry.id}-${granularity}`,
+    industryId: industry.id,
+    industryName: industry.name,
+    score,
+    level: getLevel(score),
+    breakdown,
+    contentCount: count,
+    sentimentDistribution,
+    snapshotAt: now,
+    granularity,
+    riskDistribution,
+    topContents,
+  } satisfies TemperatureDetail;
 }

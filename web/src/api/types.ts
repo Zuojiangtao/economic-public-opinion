@@ -340,8 +340,46 @@ export interface TemperatureSnapshot {
   granularity: 'hour' | 'day';
 }
 
+export interface RiskDistribution {
+  low: number;
+  medium: number;
+  high: number;
+  critical: number;
+}
+
+export interface TopContentSummary {
+  id: string;
+  title: string;
+  sourceType: SourceType;
+  sourceName: string;
+  publishedAt: string;
+  sentiment: SentimentLabel;
+  riskLevel: RiskLevel;
+  url: string;
+}
+
+export interface TemperatureDetail extends TemperatureSnapshot {
+  riskDistribution: RiskDistribution;
+  topContents: TopContentSummary[];
+}
+
 export interface TemperatureListResponse {
   items: TemperatureSnapshot[];
   total: number;
   granularity: 'hour' | 'day';
+}
+
+export interface TemperatureTrendResponse {
+  industryId: string;
+  industryName: string;
+  granularity: 'hour' | 'day';
+  items: TemperatureSnapshot[];
+  total: number;
+}
+
+export interface TemperatureListParams {
+  granularity?: 'hour' | 'day';
+  type?: IndustryType;
+  market?: MarketType;
+  projectId?: string;
 }

@@ -22,7 +22,10 @@ import type {
   IndustryQueryResult,
   IndustryType,
   TemperatureSnapshot,
+  TemperatureDetail,
   TemperatureListResponse,
+  TemperatureTrendResponse,
+  TemperatureListParams,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -130,8 +133,18 @@ export const industryMappingsApi = {
 };
 
 export const temperaturesApi = {
-  list: (granularity?: 'hour' | 'day') =>
-    request<TemperatureListResponse>(`/temperatures${granularity ? `?granularity=${granularity}` : ''}`),
+  list: (params?: TemperatureListParams) =>
+    request<TemperatureListResponse>(`/temperatures${toQuery((params || {}) as Record<string, unknown>)}`),
+  getDetail: (industryId: string, granularity?: 'hour' | 'day') =>
+    request<TemperatureDetail>(`/temperatures/${industryId}${toQuery({ granularity } as Record<string, unknown>)}`),
+  getTrend: (
+    industryId: string,
+    params?: { granularity?: 'hour' | 'day'; limit?: number; startDate?: string; endDate?: string },
+  ) =>
+    request<TemperatureTrendResponse>(
+      `/temperatures/${industryId}/trend${toQuery((params || {}) as Record<string, unknown>)}`,
+    ),
+  /** @deprecated use getDetail */
   getById: (industryId: string, granularity?: 'hour' | 'day') =>
-    request<TemperatureSnapshot>(`/temperatures/${industryId}${granularity ? `?granularity=${granularity}` : ''}`),
+    request<TemperatureSnapshot>(`/temperatures/${industryId}${toQuery({ granularity } as Record<string, unknown>)}`),
 };

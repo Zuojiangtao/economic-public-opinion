@@ -415,6 +415,97 @@ paths:
         '204':
           description: 删除成功
 
+  /temperatures:
+    get:
+      operationId: listTemperatures
+      tags: [temperatures]
+      summary: 行业温度排名列表
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: granularity
+          in: query
+          schema: { type: string, enum: [hour, day], default: hour }
+          description: 时间粒度（小时级/日级）
+        - name: type
+          in: query
+          schema: { type: string, enum: [industry, sector, concept, theme] }
+          description: 行业类型过滤
+        - name: market
+          in: query
+          schema: { type: string, enum: [cn, hk, us] }
+          description: 按包含该市场股票过滤
+        - name: projectId
+          in: query
+          schema: { type: string }
+          description: 仅返回监测方案 targetIds 内的行业
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemperatureListResponse'
+
+  /temperatures/{industryId}:
+    get:
+      operationId: getTemperatureDetail
+      tags: [temperatures]
+      summary: 单个行业温度详情
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: industryId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: granularity
+          in: query
+          schema: { type: string, enum: [hour, day], default: hour }
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemperatureDetail'
+        '404':
+          description: 行业不存在
+
+  /temperatures/{industryId}/trend:
+    get:
+      operationId: getTemperatureTrend
+      tags: [temperatures]
+      summary: 单个行业温度历史趋势
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - name: industryId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: granularity
+          in: query
+          schema: { type: string, enum: [hour, day], default: hour }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 24, minimum: 1, maximum: 168 }
+          description: 返回最近 N 条历史快照
+        - name: startDate
+          in: query
+          schema: { type: string, format: date-time }
+          description: 起始时间过滤
+        - name: endDate
+          in: query
+          schema: { type: string, format: date-time }
+          description: 截止时间过滤
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TemperatureTrendResponse'
+        '404':
+          description: 行业不存在
+
 components:
   securitySchemes:
     BearerAuth:
@@ -719,3 +810,83 @@ components:
         message: { type: string }
         details: { type: object }
         requestId: { type: string }
+
+    TemperatureBreakdown:
+      type: object
+      required: [sentimentScore, volumeAnomalyScore, spreadIntensityScore, sourceCredibilityScore]
+      properties:
+        sentimentScore: { type: number, description: '情绪得分 0-100，权重35%' }
+        volumeAnomalyScore: { type: number, description: '声量异动得分 0-100，权重25%' }
+        spreadIntensityScore: { type: number, description: '传播热度得分 0-100，权重20%' }
+        sourceCredibilityScore: { type: number, description: '来源可信度得分 0-100，权重20%' }
+
+    TemperatureSnapshot:
+      type: object
+      required: [id, industryId, industryName, score, level, breakdown, contentCount, sentimentDistribution, snapshotAt, granularity]
+      properties:
+        id: { type: string }
+        industryId: { type: string }
+        industryName: { type: string }
+        score: { type: number, minimum: 0, maximum: 100, description: '综合温度分 0-100' }
+        level: { type: string, enum: [freezing, cool, neutral, warm, hot], description: '温度分层' }
+        breakdown: { $ref: '#/components/schemas/TemperatureBreakdown' }
+        contentCount: { type: integer }
+        sentimentDistribution:
+          type: object
+          properties:
+            positive: { type: integer }
+            neutral: { type: integer }
+            negative: { type: integer }
+        snapshotAt: { type: string, format: date-time }
+        granularity: { type: string, enum: [hour, day] }
+
+    RiskDistribution:
+      type: object
+      properties:
+        low: { type: integer }
+        medium: { type: integer }
+        high: { type: integer }
+        critical: { type: integer }
+
+    TopContentSummary:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        sourceType: { type: string, enum: [news, forums, social, broker, app] }
+        sourceName: { type: string }
+        publishedAt: { type: string, format: date-time }
+        sentiment: { type: string, enum: [positive, neutral, negative] }
+        riskLevel: { type: string, enum: [low, medium, high, critical] }
+        url: { type: string }
+
+    TemperatureDetail:
+      allOf:
+        - $ref: '#/components/schemas/TemperatureSnapshot'
+        - type: object
+          required: [riskDistribution, topContents]
+          properties:
+            riskDistribution: { $ref: '#/components/schemas/RiskDistribution' }
+            topContents:
+              type: array
+              items: { $ref: '#/components/schemas/TopContentSummary' }
+
+    TemperatureListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TemperatureSnapshot' }
+        total: { type: integer }
+        granularity: { type: string, enum: [hour, day] }
+
+    TemperatureTrendResponse:
+      type: object
+      properties:
+        industryId: { type: string }
+        industryName: { type: string }
+        granularity: { type: string, enum: [hour, day] }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/TemperatureSnapshot' }
+        total: { type: integer }

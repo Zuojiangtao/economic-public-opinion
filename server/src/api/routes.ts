@@ -13,11 +13,12 @@ import {
   queryIndustriesByKeywords,
   queryIndustriesByText,
 } from '../nlp/industryMappingService.js';
-import { computeTemperatureSnapshots } from '../temperature/temperatureService.js';
+import { computeTemperatureSnapshots, computeTemperatureDetail } from '../temperature/temperatureService.js';
 import {
   updateSnapshots,
   getSnapshotsByGranularity,
-  getSnapshotByIndustry,
+  pushToHistory,
+  getHistory,
 } from '../temperature/temperatureStore.js';
 import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
 import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType } from '../types.js';
@@ -345,23 +346,59 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
    * 计算并刷新温度快照的辅助函数。
    * 每次请求时按需重新计算（MVP 阶段不做缓存过期，直接实时算）。
    */
-  function refreshTemperatures(granularity: 'hour' | 'day' = 'hour') {
-    const industries = Array.from(industryMappings.values());
+  function refreshTemperatures(
+    granularity: 'hour' | 'day' = 'hour',
+    industryFilter?: (m: ReturnType<typeof industryMappings.values> extends IterableIterator<infer T> ? T : never) => boolean,
+  ) {
+    let industries = Array.from(industryMappings.values());
+    if (industryFilter) industries = industries.filter(industryFilter);
     const allItems = storage.getAll();
     const snapshots = computeTemperatureSnapshots(industries, allItems, granularity);
     updateSnapshots(snapshots);
+    pushToHistory(snapshots);
     return snapshots;
   }
 
   /**
    * GET /temperatures
-   * 返回所有行业温度列表，按温度降序排列。
-   * Query: granularity=hour|day（默认 hour）
+   * 返回行业温度排名列表，按温度降序排列。
+   * Query:
+   *   granularity  = hour | day（默认 hour）
+   *   type         = industry | sector | concept | theme（行业类型过滤）
+   *   market       = cn | hk | us（按包含该市场股票过滤）
+   *   projectId    = 监测方案 ID（仅返回该方案 targetIds 内的行业）
    */
   router.get('/temperatures', (req, res) => {
     const granularity = req.query.granularity === 'day' ? 'day' : 'hour';
-    refreshTemperatures(granularity);
-    const snapshots = getSnapshotsByGranularity(granularity);
+    const type = req.query.type as IndustryType | undefined;
+    const market = req.query.market as MarketType | undefined;
+    const projectId = req.query.projectId as string | undefined;
+
+    // 确定目标行业 ID 集合（来自监测方案）
+    let targetIds: Set<string> | undefined;
+    if (projectId) {
+      const p = projects.get(projectId);
+      if (p && p.targetIds?.length) targetIds = new Set(p.targetIds);
+    }
+
+    const industryFilter = (m: { type: string; stocks: Array<{ market: string }>; id: string }) => {
+      if (type && m.type !== type) return false;
+      if (market && !m.stocks.some((s) => s.market === market)) return false;
+      if (targetIds && !targetIds.has(m.id)) return false;
+      return true;
+    };
+
+    refreshTemperatures(granularity, industryFilter as Parameters<typeof refreshTemperatures>[1]);
+    const snapshots = getSnapshotsByGranularity(granularity).filter((s) => {
+      if (type) {
+        const m = industryMappings.get(s.industryId);
+        if (!m || m.type !== type) return false;
+      }
+      if (targetIds && !targetIds.has(s.industryId)) return false;
+      // market 过滤已在 industryFilter 中处理，此处不重复
+      return true;
+    });
+
     res.json({
       items: snapshots,
       total: snapshots.length,
@@ -371,18 +408,62 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
 
   /**
    * GET /temperatures/:industryId
-   * 返回单个行业的温度详情。
+   * 返回单个行业的温度详情（含风险分布和关键驱动内容）。
    * Query: granularity=hour|day（默认 hour）
    */
   router.get('/temperatures/:industryId', (req, res) => {
     const granularity = req.query.granularity === 'day' ? 'day' : 'hour';
-    refreshTemperatures(granularity);
-    const snapshot = getSnapshotByIndustry(req.params.industryId, granularity);
-    if (!snapshot) {
-      res.status(404).json({ code: 'NOT_FOUND', message: '行业温度不存在' });
+    const industry = industryMappings.get(req.params.industryId);
+    if (!industry) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '行业不存在' });
       return;
     }
-    res.json(snapshot);
+    const allItems = storage.getAll();
+    const detail = computeTemperatureDetail(industry, allItems, granularity);
+    // 同步更新快照缓存和历史
+    updateSnapshots([detail]);
+    pushToHistory([detail]);
+    res.json(detail);
+  });
+
+  /**
+   * GET /temperatures/:industryId/trend
+   * 返回单个行业的温度历史趋势。
+   * Query:
+   *   granularity = hour | day（默认 hour）
+   *   limit       = 返回条数，默认 24
+   *   startDate   = ISO 日期字符串，过滤起始时间
+   *   endDate     = ISO 日期字符串，过滤截止时间
+   */
+  router.get('/temperatures/:industryId/trend', (req, res) => {
+    const { industryId } = req.params;
+    if (!industryMappings.has(industryId)) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '行业不存在' });
+      return;
+    }
+    const granularity = req.query.granularity === 'day' ? 'day' : 'hour';
+    const limit = Math.min(Math.max(parseInt(req.query.limit as string) || 24, 1), 168);
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
+
+    // 如果历史为空，先触发一次计算以填充历史
+    const history = getHistory(industryId, granularity, limit, startDate, endDate);
+    if (history.length === 0) {
+      const industry = industryMappings.get(industryId)!;
+      const allItems = storage.getAll();
+      const detail = computeTemperatureDetail(industry, allItems, granularity);
+      updateSnapshots([detail]);
+      pushToHistory([detail]);
+    }
+
+    const trend = getHistory(industryId, granularity, limit, startDate, endDate);
+    res.json({
+      industryId,
+      industryName: industryMappings.get(industryId)?.name ?? industryId,
+      granularity,
+      items: trend,
+      total: trend.length,
+    });
   });
 
   // ==================== Crawler Management ====================
