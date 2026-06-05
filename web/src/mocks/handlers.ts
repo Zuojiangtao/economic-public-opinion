@@ -17,6 +17,10 @@ import type {
   TemperatureSnapshot,
   TemperatureDetail,
   TemperatureLevel,
+  SourceConfig,
+  AuthorizationStatus,
+  AntiCrawlRisk,
+  AvailabilityStatus,
 } from '../api/types';
 
 let contents = [...mockContents];
@@ -25,6 +29,32 @@ let alerts = [...mockAlerts];
 let alertRules = [...mockAlertRules];
 let lexicons = [...mockLexicons];
 let nextId = 1000;
+
+// ---- 数据源配置 Mock 数据（T006） ----
+let sourceConfigs: SourceConfig[] = [
+  { id: 'RegulatoryAuthorityCrawler', name: '监管机构公告', sourceName: '监管机构公告', sourceType: 'regulatory', credibilityScore: 98, includeInTemperature: true, authorizationStatus: 'authorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '证监会、交易所等监管机构官方公告，权威性最高', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'HKEXCrawler', name: '港交所披露易', sourceName: '港交所披露易', sourceType: 'regulatory', credibilityScore: 97, includeInTemperature: true, authorizationStatus: 'authorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '香港交易所官方披露平台', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'SECCrawler', name: '美国SEC', sourceName: '美股资讯', sourceType: 'regulatory', credibilityScore: 96, includeInTemperature: true, authorizationStatus: 'authorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '美国证监会公开披露文件', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'BrokerResearchCrawler', name: '券商研报', sourceName: '研报', sourceType: 'broker', credibilityScore: 92, includeInTemperature: true, authorizationStatus: 'restricted', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '国内主要券商研究报告', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'FirstBankCrawler', name: '第一银行研报', sourceName: '第一银行', sourceType: 'broker', credibilityScore: 88, includeInTemperature: true, authorizationStatus: 'restricted', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '海外券商研报', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'BloombergCrawler', name: '彭博社', sourceName: '彭博社 Bloomberg', sourceType: 'news', credibilityScore: 90, includeInTemperature: true, authorizationStatus: 'restricted', antiCrawlRisk: 'high', availabilityStatus: 'unstable', description: '全球顶级财经媒体', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'ReutersCrawler', name: '路透社', sourceName: '路透社 Reuters', sourceType: 'news', credibilityScore: 88, includeInTemperature: true, authorizationStatus: 'restricted', antiCrawlRisk: 'high', availabilityStatus: 'unstable', description: '全球权威新闻通讯社', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'ChinaSecuritiesJournalCrawler', name: '中国证券报', sourceName: '中国证券报', sourceType: 'news', credibilityScore: 85, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '证券行业官方报纸', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'ClsCrawler', name: '财联社', sourceName: '财联社', sourceType: 'news', credibilityScore: 83, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '专注于财经资讯，快讯及时性强', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'SinaFinanceCrawler', name: '新浪财经', sourceName: '新浪财经', sourceType: 'news', credibilityScore: 75, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '综合财经门户，转载内容较多', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'WindCrawler', name: '万得资讯', sourceName: '万得资讯', sourceType: 'app', credibilityScore: 82, includeInTemperature: true, authorizationStatus: 'restricted', antiCrawlRisk: 'high', availabilityStatus: 'unstable', description: '专业金融数据终端', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'ThsCrawler', name: '同花顺', sourceName: '同花顺', sourceType: 'app', credibilityScore: 72, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '国内主流股票APP', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'EastMoneyCrawler', name: '东方财富', sourceName: '东方财富', sourceType: 'app', credibilityScore: 70, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '国内最大股票社区和财经平台', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'StockstarCrawler', name: '证券之星', sourceName: '证券之星', sourceType: 'app', credibilityScore: 65, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '老牌财经资讯平台', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'FutuCrawler', name: '富途证券', sourceName: '富途牛牛', sourceType: 'app', credibilityScore: 68, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '港美股主流券商平台', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'TigerCrawler', name: '老虎证券', sourceName: '老虎证券 Tiger', sourceType: 'app', credibilityScore: 65, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '港美股券商，散户社区讨论较多', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'XueqiuCrawler', name: '雪球', sourceName: '雪球', sourceType: 'social', credibilityScore: 52, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '国内最大股票社交平台', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'Laohu8Crawler', name: '老虎社区', sourceName: '老虎社区', sourceType: 'forums', credibilityScore: 42, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '老虎证券社区', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'GubaCrawler', name: '股吧', sourceName: '股吧', sourceType: 'forums', credibilityScore: 40, includeInTemperature: true, authorizationStatus: 'unauthorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '东方财富股票讨论论坛', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'ZhihuCrawler', name: '知乎', sourceName: '知乎', sourceType: 'social', credibilityScore: 38, includeInTemperature: false, authorizationStatus: 'unauthorized', antiCrawlRisk: 'medium', availabilityStatus: 'available', description: '问答社区，金融话题质量参差不齐', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'XiaohongshuCrawler', name: '小红书', sourceName: '小红书', sourceType: 'social', credibilityScore: 25, includeInTemperature: false, authorizationStatus: 'unauthorized', antiCrawlRisk: 'high', availabilityStatus: 'unstable', description: '生活社区，金融信息可信度低', updatedAt: '2026-01-01T00:00:00Z' },
+  { id: 'DouyinCrawler', name: '抖音', sourceName: '抖音', sourceType: 'social', credibilityScore: 20, includeInTemperature: false, authorizationStatus: 'unauthorized', antiCrawlRisk: 'high', availabilityStatus: 'unstable', description: '短视频平台，金融内容娱乐化，可信度最低', updatedAt: '2026-01-01T00:00:00Z' },
+];
 
 function paginate<T>(items: T[], page: number, pageSize: number) {
   const start = (page - 1) * pageSize;
@@ -451,5 +481,41 @@ export const handlers = [
     });
 
     return HttpResponse.json({ industryId, industryName: names[industryId] ?? industryId, granularity, items, total: items.length });
+  }),
+
+  // Source Configs (T006)
+  http.get('/api/v1/source-configs', async ({ request }) => {
+    await delay(150);
+    const url = new URL(request.url);
+    const sourceType = url.searchParams.get('sourceType') as SourceType | null;
+    const result = sourceType ? sourceConfigs.filter((c) => c.sourceType === sourceType) : sourceConfigs;
+    return HttpResponse.json(result);
+  }),
+
+  http.put('/api/v1/source-configs/:id', async ({ params, request }) => {
+    await delay(200);
+    const idx = sourceConfigs.findIndex((c) => c.id === params.id);
+    if (idx === -1) return new HttpResponse(null, { status: 404 });
+    const body = (await request.json()) as Partial<SourceConfig>;
+    const allowed: (keyof SourceConfig)[] = ['credibilityScore', 'includeInTemperature', 'authorizationStatus', 'antiCrawlRisk', 'availabilityStatus', 'description'];
+    const patch: Partial<SourceConfig> = {};
+    for (const key of allowed) {
+      if (key in body) (patch as Record<string, unknown>)[key] = (body as Record<string, unknown>)[key];
+    }
+    sourceConfigs[idx] = { ...sourceConfigs[idx], ...patch, updatedAt: new Date().toISOString() };
+    return HttpResponse.json(sourceConfigs[idx]);
+  }),
+
+  http.post('/api/v1/source-configs/:id/toggle', async ({ params, request }) => {
+    await delay(150);
+    const idx = sourceConfigs.findIndex((c) => c.id === params.id);
+    if (idx === -1) return new HttpResponse(null, { status: 404 });
+    const body = (await request.json()) as { includeInTemperature?: boolean };
+    sourceConfigs[idx] = {
+      ...sourceConfigs[idx],
+      includeInTemperature: body.includeInTemperature ?? !sourceConfigs[idx].includeInTemperature,
+      updatedAt: new Date().toISOString(),
+    };
+    return HttpResponse.json(sourceConfigs[idx]);
   }),
 ];

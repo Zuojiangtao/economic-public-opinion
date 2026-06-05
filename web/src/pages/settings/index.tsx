@@ -8,12 +8,14 @@ import {
   Modal,
   Form,
   Input,
+  InputNumber,
   Select,
   Popconfirm,
   Typography,
   Tabs,
   Switch,
   Spin,
+  Tooltip,
   message,
 } from 'antd';
 import {
@@ -24,10 +26,11 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   LoadingOutlined,
+  EditOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { lexiconsApi } from '../../api/client';
-import type { LexiconEntry, LexiconCategory } from '../../api/types';
+import { lexiconsApi, sourceConfigsApi } from '../../api/client';
+import type { LexiconEntry, LexiconCategory, SourceConfig, SourceType } from '../../api/types';
 
 interface CrawlerStatus {
   name: string;
@@ -240,6 +243,284 @@ function CrawlerManagement() {
   );
 }
 
+// ============================================================
+// 数据源权重管理组件（T006）
+// ============================================================
+
+const sourceTypeLabels: Record<SourceType, { text: string; color: string }> = {
+  regulatory: { text: '监管', color: 'red' },
+  broker: { text: '研报', color: 'purple' },
+  news: { text: '新闻', color: 'blue' },
+  app: { text: '财经APP', color: 'cyan' },
+  forums: { text: '论坛', color: 'orange' },
+  social: { text: '社媒', color: 'magenta' },
+};
+
+const authStatusLabels: Record<string, { text: string; color: string }> = {
+  authorized: { text: '已授权', color: 'success' },
+  restricted: { text: '受限', color: 'warning' },
+  unauthorized: { text: '未授权', color: 'error' },
+};
+
+const antiCrawlLabels: Record<string, { text: string; color: string }> = {
+  low: { text: '低', color: 'green' },
+  medium: { text: '中', color: 'orange' },
+  high: { text: '高', color: 'red' },
+};
+
+const availabilityLabels: Record<string, { text: string; color: string }> = {
+  available: { text: '正常', color: 'success' },
+  unstable: { text: '不稳定', color: 'warning' },
+  unavailable: { text: '不可用', color: 'error' },
+};
+
+function CredibilityBar({ score }: { score: number }) {
+  const color = score >= 80 ? '#52c41a' : score >= 60 ? '#1677ff' : score >= 40 ? '#fa8c16' : '#ff4d4f';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, background: '#f0f0f0', borderRadius: 4, height: 6, minWidth: 60 }}>
+        <div style={{ width: `${score}%`, background: color, height: 6, borderRadius: 4, transition: 'width 0.3s' }} />
+      </div>
+      <span style={{ fontWeight: 600, color, minWidth: 28 }}>{score}</span>
+    </div>
+  );
+}
+
+function SourceConfigManagement() {
+  const queryClient = useQueryClient();
+  const [editingConfig, setEditingConfig] = useState<SourceConfig | null>(null);
+  const [form] = Form.useForm();
+  const [filterType, setFilterType] = useState<SourceType | undefined>();
+
+  const { data: configs, isLoading } = useQuery({
+    queryKey: ['sourceConfigs', filterType],
+    queryFn: () => sourceConfigsApi.list(filterType),
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, val }: { id: string; val: boolean }) =>
+      sourceConfigsApi.toggle(id, val),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sourceConfigs'] });
+      message.success('已更新');
+    },
+    onError: () => message.error('更新失败'),
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Parameters<typeof sourceConfigsApi.update>[1] }) =>
+      sourceConfigsApi.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sourceConfigs'] });
+      message.success('配置已保存');
+      setEditingConfig(null);
+      form.resetFields();
+    },
+    onError: () => message.error('保存失败'),
+  });
+
+  const columns = [
+    {
+      title: '数据源',
+      key: 'name',
+      render: (_: unknown, r: SourceConfig) => (
+        <div>
+          <div style={{ fontWeight: 500 }}>{r.name}</div>
+          <div style={{ fontSize: 12, color: '#999' }}>{r.sourceName}</div>
+        </div>
+      ),
+    },
+    {
+      title: '类型',
+      dataIndex: 'sourceType',
+      key: 'sourceType',
+      width: 90,
+      render: (t: SourceType) => {
+        const l = sourceTypeLabels[t];
+        return l ? <Tag color={l.color}>{l.text}</Tag> : <Tag>{t}</Tag>;
+      },
+    },
+    {
+      title: '可信度',
+      dataIndex: 'credibilityScore',
+      key: 'credibilityScore',
+      width: 140,
+      sorter: (a: SourceConfig, b: SourceConfig) => a.credibilityScore - b.credibilityScore,
+      render: (score: number) => <CredibilityBar score={score} />,
+    },
+    {
+      title: '纳入温度计算',
+      dataIndex: 'includeInTemperature',
+      key: 'includeInTemperature',
+      width: 110,
+      render: (val: boolean, r: SourceConfig) => (
+        <Switch
+          checked={val}
+          size="small"
+          onChange={(checked) => toggleMutation.mutate({ id: r.id, val: checked })}
+        />
+      ),
+    },
+    {
+      title: '授权状态',
+      dataIndex: 'authorizationStatus',
+      key: 'authorizationStatus',
+      width: 90,
+      render: (s: string) => {
+        const l = authStatusLabels[s];
+        return l ? <Tag color={l.color}>{l.text}</Tag> : <Tag>{s}</Tag>;
+      },
+    },
+    {
+      title: '反爬风险',
+      dataIndex: 'antiCrawlRisk',
+      key: 'antiCrawlRisk',
+      width: 80,
+      render: (s: string) => {
+        const l = antiCrawlLabels[s];
+        return l ? <Tag color={l.color}>{l.text}</Tag> : <Tag>{s}</Tag>;
+      },
+    },
+    {
+      title: '可用状态',
+      dataIndex: 'availabilityStatus',
+      key: 'availabilityStatus',
+      width: 90,
+      render: (s: string) => {
+        const l = availabilityLabels[s];
+        return l ? <Tag color={l.color}>{l.text}</Tag> : <Tag>{s}</Tag>;
+      },
+    },
+    {
+      title: '说明',
+      dataIndex: 'description',
+      key: 'description',
+      ellipsis: true,
+      render: (text: string) => text
+        ? <Tooltip title={text}><Typography.Text ellipsis style={{ maxWidth: 200 }}>{text}</Typography.Text></Tooltip>
+        : '-',
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      width: 70,
+      render: (_: unknown, r: SourceConfig) => (
+        <Button
+          type="link"
+          size="small"
+          icon={<EditOutlined />}
+          onClick={() => {
+            setEditingConfig(r);
+            form.setFieldsValue({
+              credibilityScore: r.credibilityScore,
+              includeInTemperature: r.includeInTemperature,
+              authorizationStatus: r.authorizationStatus,
+              antiCrawlRisk: r.antiCrawlRisk,
+              availabilityStatus: r.availabilityStatus,
+              description: r.description,
+            });
+          }}
+        >
+          编辑
+        </Button>
+      ),
+    },
+  ];
+
+  const typeOptions = [
+    { label: '全部类型', value: undefined },
+    ...Object.entries(sourceTypeLabels).map(([v, l]) => ({ label: l.text, value: v as SourceType })),
+  ];
+
+  const enabledCount = configs?.filter((c) => c.includeInTemperature).length ?? 0;
+  const totalCount = configs?.length ?? 0;
+
+  return (
+    <>
+      <Card style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Space>
+            <Select
+              options={typeOptions}
+              value={filterType}
+              onChange={setFilterType}
+              style={{ width: 130 }}
+            />
+            <Typography.Text type="secondary">
+              共 <strong>{totalCount}</strong> 个数据源，
+              <strong style={{ color: '#52c41a' }}>{enabledCount}</strong> 个纳入温度计算
+            </Typography.Text>
+          </Space>
+          <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['sourceConfigs'] })}>
+            刷新
+          </Button>
+        </div>
+      </Card>
+      <Card>
+        <Table<SourceConfig>
+          columns={columns}
+          dataSource={configs ?? []}
+          rowKey="id"
+          loading={isLoading}
+          size="middle"
+          pagination={false}
+          rowClassName={(r) => (!r.includeInTemperature ? 'ant-table-row-disabled' : '')}
+        />
+      </Card>
+
+      <Modal
+        title={`编辑数据源：${editingConfig?.name}`}
+        open={!!editingConfig}
+        onOk={() => {
+          if (!editingConfig) return;
+          form.validateFields().then((values) => {
+            updateMutation.mutate({ id: editingConfig.id, data: values });
+          });
+        }}
+        onCancel={() => {
+          setEditingConfig(null);
+          form.resetFields();
+        }}
+        confirmLoading={updateMutation.isPending}
+        width={500}
+      >
+        <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
+          <Form.Item name="credibilityScore" label="可信度评分（0-100）" rules={[{ required: true }]}>
+            <InputNumber min={0} max={100} style={{ width: '100%' }} />
+          </Form.Item>
+          <Form.Item name="includeInTemperature" label="纳入温度计算" valuePropName="checked">
+            <Switch />
+          </Form.Item>
+          <Form.Item name="authorizationStatus" label="授权状态">
+            <Select options={[
+              { label: '已授权', value: 'authorized' },
+              { label: '受限', value: 'restricted' },
+              { label: '未授权', value: 'unauthorized' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="antiCrawlRisk" label="反爬风险">
+            <Select options={[
+              { label: '低', value: 'low' },
+              { label: '中', value: 'medium' },
+              { label: '高', value: 'high' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="availabilityStatus" label="可用状态">
+            <Select options={[
+              { label: '正常', value: 'available' },
+              { label: '不稳定', value: 'unstable' },
+              { label: '不可用', value: 'unavailable' },
+            ]} />
+          </Form.Item>
+          <Form.Item name="description" label="说明">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
+  );
+}
+
 export default function SettingsPage() {
   const [activeCategory, setActiveCategory] = useState<LexiconCategory | undefined>();
   const [modalOpen, setModalOpen] = useState(false);
@@ -365,6 +646,11 @@ export default function SettingsPage() {
             key: 'crawlers',
             label: '爬虫管理',
             children: <CrawlerManagement />,
+          },
+          {
+            key: 'source-configs',
+            label: '数据源权重',
+            children: <SourceConfigManagement />,
           },
         ]}
       />

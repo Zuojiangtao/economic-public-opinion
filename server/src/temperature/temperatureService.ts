@@ -1,14 +1,16 @@
-import type { ContentItem, SourceType, IndustryMapping, TemperatureSnapshot, TemperatureLevel, TemperatureBreakdown, TemperatureDetail, RiskDistribution, TopContentSummary } from '../types.js';
+import type { ContentItem, SourceType, SourceConfig, IndustryMapping, TemperatureSnapshot, TemperatureLevel, TemperatureBreakdown, TemperatureDetail, RiskDistribution, TopContentSummary } from '../types.js';
+import { buildSourceConfigMap, buildSourceTypeCredibility } from '../storage/sourceConfigsStore.js';
 
 // ============================================================
-// 来源可信度权重（0-100）
+// 来源可信度默认值（无配置时的兜底，0-100）
 // ============================================================
-const SOURCE_CREDIBILITY: Record<SourceType, number> = {
-  broker: 95,   // 券商研报
-  news: 80,     // 主流新闻
-  app: 70,      // 财经 APP
-  forums: 50,   // 投资论坛
-  social: 40,   // 社交媒体
+const DEFAULT_SOURCE_CREDIBILITY: Record<SourceType, number> = {
+  regulatory: 96, // 监管公告
+  broker: 92,     // 券商研报
+  news: 80,       // 主流新闻
+  app: 70,        // 财经 APP
+  forums: 45,     // 投资论坛
+  social: 35,     // 社交媒体
 };
 
 // ============================================================
@@ -90,11 +92,38 @@ function calcSpreadIntensityScore(items: ContentItem[], allMaxEngagement: number
 
 // ============================================================
 // 来源可信度得分 0-100（20%）
-// 按来源类型权重取平均
+// 优先使用动态 SourceConfig 查找，按 sourceName 精确匹配；
+// 未命中则按 sourceType 使用类型级平均值；
+// includeInTemperature=false 的内容不参与计算（忽略）。
 // ============================================================
-function calcSourceCredibilityScore(items: ContentItem[]): number {
-  if (items.length === 0) return 60; // 无数据时取保守默认
-  const avg = items.reduce((sum, c) => sum + (SOURCE_CREDIBILITY[c.sourceType] ?? 50), 0) / items.length;
+function calcSourceCredibilityScore(
+  items: ContentItem[],
+  sourceConfigMap?: Map<string, SourceConfig>,
+  sourceTypeCredibility?: Map<string, number>,
+): number {
+  // 过滤掉被标记为不纳入温度计算的数据源内容
+  const eligible = sourceConfigMap
+    ? items.filter((c) => {
+        const cfg = sourceConfigMap.get(c.sourceName);
+        // 若找不到精确匹配配置，保留（按类型兜底）
+        return !cfg || cfg.includeInTemperature;
+      })
+    : items;
+
+  if (eligible.length === 0) return 60; // 无数据时取保守默认
+
+  const avg =
+    eligible.reduce((sum, c) => {
+      if (sourceConfigMap) {
+        const cfg = sourceConfigMap.get(c.sourceName);
+        if (cfg) return sum + cfg.credibilityScore;
+        // 按 sourceType 类型兜底
+        const typeCred = sourceTypeCredibility?.get(c.sourceType) ?? DEFAULT_SOURCE_CREDIBILITY[c.sourceType] ?? 50;
+        return sum + typeCred;
+      }
+      return sum + (DEFAULT_SOURCE_CREDIBILITY[c.sourceType] ?? 50);
+    }, 0) / eligible.length;
+
   return Math.round(avg);
 }
 
@@ -118,8 +147,13 @@ export function computeTemperatureSnapshots(
   industries: IndustryMapping[],
   allItems: ContentItem[],
   granularity: 'hour' | 'day' = 'hour',
+  sourceConfigs?: SourceConfig[],
 ): TemperatureSnapshot[] {
   const now = new Date().toISOString();
+
+  // 构建来源查找索引（T006 动态权重）
+  const sourceConfigMap = sourceConfigs ? buildSourceConfigMap(sourceConfigs) : undefined;
+  const sourceTypeCredibility = sourceConfigs ? buildSourceTypeCredibility(sourceConfigs) : undefined;
 
   // 预先为每个行业收集命中内容
   const industryItems: ContentItem[][] = industries.map((ind) => getMatchedItems(ind, allItems));
@@ -144,7 +178,7 @@ export function computeTemperatureSnapshots(
       sentimentScore: calcSentimentScore(items),
       volumeAnomalyScore: calcVolumeAnomalyScore(count, counts),
       spreadIntensityScore: calcSpreadIntensityScore(items, maxEngagement),
-      sourceCredibilityScore: calcSourceCredibilityScore(items),
+      sourceCredibilityScore: calcSourceCredibilityScore(items, sourceConfigMap, sourceTypeCredibility),
     };
 
     const score = calcTemperature(breakdown);
@@ -175,9 +209,14 @@ export function computeTemperatureDetail(
   allItems: ContentItem[],
   granularity: 'hour' | 'day' = 'hour',
   topN = 5,
+  sourceConfigs?: SourceConfig[],
 ): TemperatureDetail {
   const now = new Date().toISOString();
   const items = getMatchedItems(industry, allItems);
+
+  // 构建来源查找索引（T006 动态权重）
+  const sourceConfigMap = sourceConfigs ? buildSourceConfigMap(sourceConfigs) : undefined;
+  const sourceTypeCredibility = sourceConfigs ? buildSourceTypeCredibility(sourceConfigs) : undefined;
 
   // 需要全局信息以归一化（单行业场景退化为自身归一化）
   const count = items.length;
@@ -192,7 +231,7 @@ export function computeTemperatureDetail(
     sentimentScore: calcSentimentScore(items),
     volumeAnomalyScore: count > 0 ? 50 : 0, // 单行业无法归一化，使用中位值
     spreadIntensityScore: Math.round(Math.min(100, (totalEngagement / maxEngagement) * 100)),
-    sourceCredibilityScore: calcSourceCredibilityScore(items),
+    sourceCredibilityScore: calcSourceCredibilityScore(items, sourceConfigMap, sourceTypeCredibility),
   };
 
   const score = calcTemperature(breakdown);

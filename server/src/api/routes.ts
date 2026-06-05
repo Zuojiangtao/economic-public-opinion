@@ -9,6 +9,7 @@ import {
   loadIndustryMappingsMap,
   saveIndustryMappingsMap,
 } from '../storage/industryMappingsStore.js';
+import { loadSourceConfigs, saveSourceConfigs } from '../storage/sourceConfigsStore.js';
 import {
   queryIndustriesByKeywords,
   queryIndustriesByText,
@@ -41,6 +42,9 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
 
   // 需在 /contents 之前初始化，供按监测方案筛选舆情（数据见根目录 data/monitoring-projects.json）
   const projects = loadMonitoringProjectsMap();
+
+  // 数据源配置（T006），用于温度计算中的来源可信度权重
+  let sourceConfigs = loadSourceConfigs();
 
   // ==================== Contents ====================
 
@@ -340,6 +344,60 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     res.status(204).end();
   });
 
+  // ==================== Source Configs (T006) ====================
+
+  /**
+   * GET /source-configs
+   * 返回所有数据源配置列表。
+   * Query: sourceType（类型过滤）
+   */
+  router.get('/source-configs', (req, res) => {
+    const sourceType = req.query.sourceType as SourceType | undefined;
+    const result = sourceType
+      ? sourceConfigs.filter((c) => c.sourceType === sourceType)
+      : sourceConfigs;
+    res.json(result);
+  });
+
+  /**
+   * PUT /source-configs/:id
+   * 更新单个数据源配置（仅允许更新可配置字段）。
+   */
+  router.put('/source-configs/:id', (req, res) => {
+    const idx = sourceConfigs.findIndex((c) => c.id === req.params.id);
+    if (idx === -1) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '数据源配置不存在' });
+      return;
+    }
+    const allowed = ['credibilityScore', 'includeInTemperature', 'authorizationStatus', 'antiCrawlRisk', 'availabilityStatus', 'description'];
+    const patch: Record<string, unknown> = {};
+    for (const key of allowed) {
+      if (key in req.body) patch[key] = req.body[key];
+    }
+    sourceConfigs[idx] = { ...sourceConfigs[idx], ...patch, updatedAt: new Date().toISOString() };
+    saveSourceConfigs(sourceConfigs);
+    res.json(sourceConfigs[idx]);
+  });
+
+  /**
+   * POST /source-configs/:id/toggle
+   * 快捷切换数据源是否纳入温度计算。
+   */
+  router.post('/source-configs/:id/toggle', (req, res) => {
+    const idx = sourceConfigs.findIndex((c) => c.id === req.params.id);
+    if (idx === -1) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '数据源配置不存在' });
+      return;
+    }
+    sourceConfigs[idx] = {
+      ...sourceConfigs[idx],
+      includeInTemperature: req.body.includeInTemperature ?? !sourceConfigs[idx].includeInTemperature,
+      updatedAt: new Date().toISOString(),
+    };
+    saveSourceConfigs(sourceConfigs);
+    res.json(sourceConfigs[idx]);
+  });
+
   // ==================== Temperatures ====================
 
   /**
@@ -353,7 +411,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     let industries = Array.from(industryMappings.values());
     if (industryFilter) industries = industries.filter(industryFilter);
     const allItems = storage.getAll();
-    const snapshots = computeTemperatureSnapshots(industries, allItems, granularity);
+    const snapshots = computeTemperatureSnapshots(industries, allItems, granularity, sourceConfigs);
     updateSnapshots(snapshots);
     pushToHistory(snapshots);
     return snapshots;
@@ -419,7 +477,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       return;
     }
     const allItems = storage.getAll();
-    const detail = computeTemperatureDetail(industry, allItems, granularity);
+    const detail = computeTemperatureDetail(industry, allItems, granularity, 5, sourceConfigs);
     // 同步更新快照缓存和历史
     updateSnapshots([detail]);
     pushToHistory([detail]);

@@ -1,4 +1,44 @@
-export type SourceType = 'news' | 'forums' | 'social' | 'broker' | 'app';
+export type SourceType = 'news' | 'forums' | 'social' | 'broker' | 'app' | 'regulatory';
+export type SentimentLabel = 'positive' | 'neutral' | 'negative';
+export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type MarketType = 'cn' | 'hk' | 'us';
+export type AlertStatus = 'pending' | 'processing' | 'resolved' | 'ignored';
+export type AlertAction = 'start_processing' | 'resolve' | 'ignore' | 'reopen';
+export type MonitoringStatus = 'active' | 'paused' | 'archived';
+export type UserRole = 'admin' | 'analyst' | 'operator';
+export type LexiconCategory = 'brand' | 'competitor' | 'risk' | 'synonym' | 'stop';
+export type EntityType = 'company' | 'person' | 'product' | 'industry' | 'index';
+
+// ==================== Source Configs (T006) ====================
+
+export type AuthorizationStatus = 'authorized' | 'unauthorized' | 'restricted';
+export type AntiCrawlRisk = 'low' | 'medium' | 'high';
+export type AvailabilityStatus = 'available' | 'unavailable' | 'unstable';
+
+export interface SourceConfig {
+  id: string;
+  name: string;
+  sourceName: string;
+  sourceType: SourceType;
+  /** 可信度评分 0-100 */
+  credibilityScore: number;
+  /** 是否纳入温度计算 */
+  includeInTemperature: boolean;
+  authorizationStatus: AuthorizationStatus;
+  antiCrawlRisk: AntiCrawlRisk;
+  availabilityStatus: AvailabilityStatus;
+  description?: string;
+  updatedAt: string;
+}
+
+export interface SourceConfigUpdateInput {
+  credibilityScore?: number;
+  includeInTemperature?: boolean;
+  authorizationStatus?: AuthorizationStatus;
+  antiCrawlRisk?: AntiCrawlRisk;
+  availabilityStatus?: AvailabilityStatus;
+  description?: string;
+}
 export type SentimentLabel = 'positive' | 'neutral' | 'negative';
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type MarketType = 'cn' | 'hk' | 'us';

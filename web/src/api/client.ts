@@ -26,6 +26,9 @@ import type {
   TemperatureListResponse,
   TemperatureTrendResponse,
   TemperatureListParams,
+  SourceConfig,
+  SourceConfigUpdateInput,
+  SourceType,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -147,4 +150,16 @@ export const temperaturesApi = {
   /** @deprecated use getDetail */
   getById: (industryId: string, granularity?: 'hour' | 'day') =>
     request<TemperatureSnapshot>(`/temperatures/${industryId}${toQuery({ granularity } as Record<string, unknown>)}`),
+};
+
+export const sourceConfigsApi = {
+  list: (sourceType?: SourceType) =>
+    request<SourceConfig[]>(`/source-configs${sourceType ? `?sourceType=${sourceType}` : ''}`),
+  update: (id: string, data: SourceConfigUpdateInput) =>
+    request<SourceConfig>(`/source-configs/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  toggle: (id: string, includeInTemperature: boolean) =>
+    request<SourceConfig>(`/source-configs/${id}/toggle`, {
+      method: 'POST',
+      body: JSON.stringify({ includeInTemperature }),
+    }),
 };

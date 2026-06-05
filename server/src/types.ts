@@ -1,4 +1,34 @@
-export type SourceType = 'news' | 'forums' | 'social' | 'broker' | 'app';
+export type SourceType = 'news' | 'forums' | 'social' | 'broker' | 'app' | 'regulatory';
+
+// ==================== Source Configs (T006) ====================
+
+export type AuthorizationStatus = 'authorized' | 'unauthorized' | 'restricted';
+export type AntiCrawlRisk = 'low' | 'medium' | 'high';
+export type AvailabilityStatus = 'available' | 'unavailable' | 'unstable';
+
+export interface SourceConfig {
+  /** 唯一标识，通常等同于爬虫类名 */
+  id: string;
+  /** 展示名称 */
+  name: string;
+  /** 与 ContentItem.sourceName 对应的精确匹配字段 */
+  sourceName: string;
+  /** 数据源类型 */
+  sourceType: SourceType;
+  /** 可信度评分 0-100 */
+  credibilityScore: number;
+  /** 是否纳入温度计算 */
+  includeInTemperature: boolean;
+  /** 授权状态 */
+  authorizationStatus: AuthorizationStatus;
+  /** 反爬风险等级 */
+  antiCrawlRisk: AntiCrawlRisk;
+  /** 可用状态 */
+  availabilityStatus: AvailabilityStatus;
+  /** 备注说明 */
+  description?: string;
+  updatedAt: string;
+}
 export type SentimentLabel = 'positive' | 'neutral' | 'negative';
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type MarketType = 'cn' | 'hk' | 'us';  // A股/港股/美股
