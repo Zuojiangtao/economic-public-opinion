@@ -1,4 +1,4 @@
-import type { ContentItem } from '../../api/types';
+import type { ContentItem, FinancialSentimentLabel } from '../../api/types';
 
 const sources = [
   { sourceType: 'news' as const, sourceName: '财联社' },
@@ -73,7 +73,7 @@ const sentimentLabels = ['positive', 'neutral', 'negative'] as const;
 const riskLevels = ['low', 'medium', 'high', 'critical'] as const;
 const markets = ['cn', 'hk', 'us'] as const;
 
-function randomPick<T>(arr: T[]): T {
+function randomPick<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
@@ -89,6 +89,22 @@ function generateDate(daysAgo: number): string {
 }
 
 export function generateMockContents(count: number = 200): ContentItem[] {
+  // T011: 精细标签映射（sentimentLabel -> FinancialSentimentLabel 演示分布）
+  const financialLabelMap: Record<string, FinancialSentimentLabel[]> = {
+    positive: ['strong_positive', 'weak_positive'],
+    neutral: ['neutral', 'rumor'],
+    negative: ['weak_negative', 'strong_negative', 'risk'],
+  };
+  const reasoningMap: Record<FinancialSentimentLabel, string> = {
+    strong_positive: '判断为【强利好】。 强正面信号：涨停、创新高、超预期。',
+    weak_positive: '判断为【弱利好】。 正面信号：利好、增持、反弹。',
+    neutral: '判断为【中性】。 未检测到明确情绪信号，依据文本特征判定为中性。',
+    weak_negative: '判断为【弱利空】。 负面信号：利空、下跌、减持。',
+    strong_negative: '判断为【强利空】。 强负面信号：暴跌、跌停、大跌。',
+    risk: '判断为【风险】。 风险信号：暴雷、违约、破产。 建议重点关注。',
+    rumor: '判断为【传闻】。 传闻信号：据悉、消息称、有望。 内容尚未得到证实。',
+  };
+
   const items: ContentItem[] = [];
   for (let i = 0; i < count; i++) {
     const src = randomPick(sources);
@@ -105,6 +121,12 @@ export function generateMockContents(count: number = 200): ContentItem[] {
         : randomPick(riskLevels);
     const market = randomPick(markets);
     const publishedAt = generateDate(randomInt(0, 30));
+
+    // T011: 生成增强情绪标签（仅部分条目携带，模拟已分析状态）
+    const hasEnhanced = i % 3 !== 0; // ~67% 的条目有增强分析
+    const financialLabel: FinancialSentimentLabel | undefined = hasEnhanced
+      ? randomPick(financialLabelMap[sentLabel as string])
+      : undefined;
 
     items.push({
       id: `content-${String(i + 1).padStart(4, '0')}`,
@@ -139,6 +161,21 @@ export function generateMockContents(count: number = 200): ContentItem[] {
         entities: [randomPick(entities), randomPick(entities)].filter(
           (e, idx, arr) => arr.findIndex((x) => x.name === e.name) === idx,
         ),
+        ...(hasEnhanced && financialLabel
+          ? {
+              enhanced: {
+                label: financialLabel,
+                confidence: Math.round((0.55 + Math.random() * 0.35) * 100) / 100,
+                reasoning: reasoningMap[financialLabel],
+                secondaryAnalysis: financialLabel === 'risk' || financialLabel === 'strong_negative',
+                modelSource: 'dictionary' as const,
+                positiveSignals: sentLabel === 'positive' ? [randomPick(['利好', '增持', '反弹', '涨停'])] : [],
+                negativeSignals: sentLabel === 'negative' ? [randomPick(['利空', '下跌', '减持', '暴跌'])] : [],
+                riskSignals: financialLabel === 'risk' ? [randomPick(['暴雷', '违约', '破产'])] : [],
+                rumorSignals: financialLabel === 'rumor' ? [randomPick(['据悉', '消息称', '有望'])] : [],
+              },
+            }
+          : {}),
       },
       dedup: {
         clusterId: `cluster-${randomInt(1, 30)}`,

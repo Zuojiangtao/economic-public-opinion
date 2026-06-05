@@ -161,6 +161,13 @@ export class JsonStorage {
     return this.items.get(id);
   }
 
+  /** T011: 更新已有条目（用于写回增强分析结果），ID 不存在时忽略 */
+  upsert(item: ContentItem): void {
+    if (!this.items.has(item.id)) return;
+    this.items.set(item.id, item);
+    this.dirty = true;
+  }
+
   search(params: SearchParams): PaginatedResult {
     let results = Array.from(this.items.values());
 

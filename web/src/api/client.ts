@@ -29,6 +29,7 @@ import type {
   SourceConfig,
   SourceConfigUpdateInput,
   SourceType,
+  EnhancedSentimentResult,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -81,6 +82,9 @@ export const contentsApi = {
     request<ContentItem>(`/contents/${id}`),
   getStats: (params?: { startDate?: string; endDate?: string; monitoringProjectId?: string }) =>
     request<ContentStats>(`/contents/stats${toQuery((params || {}) as Record<string, unknown>)}`),
+  /** T011: 触发指定内容的增强情绪二次分析 */
+  analyzeSentiment: (id: string) =>
+    request<EnhancedSentimentResult>(`/contents/${id}/sentiment/analyze`, { method: 'POST' }),
 };
 
 export const monitoringApi = {

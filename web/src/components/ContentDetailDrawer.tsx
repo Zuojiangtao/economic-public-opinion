@@ -1,12 +1,13 @@
-import { Drawer, Descriptions, Tag, Typography, Space, Divider, Progress } from 'antd';
+import { Drawer, Descriptions, Tag, Typography, Space, Divider, Progress, Alert, Tooltip } from 'antd';
 import {
   LikeOutlined,
   MessageOutlined,
   ShareAltOutlined,
   EyeOutlined,
   LinkOutlined,
+  RobotOutlined,
 } from '@ant-design/icons';
-import type { ContentItem } from '../api/types';
+import type { ContentItem, FinancialSentimentLabel } from '../api/types';
 
 const sourceTypeLabels: Record<string, string> = {
   news: '新闻',
@@ -33,6 +34,17 @@ const riskLabels: Record<string, { text: string; color: string }> = {
   medium: { text: '中风险', color: 'gold' },
   high: { text: '高风险', color: 'orange' },
   critical: { text: '极高风险', color: 'red' },
+};
+
+// T011: 精细情绪标签展示配置
+const financialLabelConfig: Record<FinancialSentimentLabel, { text: string; color: string; alertType?: 'success' | 'warning' | 'error' | 'info' }> = {
+  strong_positive: { text: '强利好', color: '#00a854', alertType: 'success' },
+  weak_positive: { text: '弱利好', color: '#52c41a', alertType: 'success' },
+  neutral: { text: '中性', color: '#1677ff', alertType: 'info' },
+  weak_negative: { text: '弱利空', color: '#fa8c16', alertType: 'warning' },
+  strong_negative: { text: '强利空', color: '#f5222d', alertType: 'error' },
+  risk: { text: '风险', color: '#cf1322', alertType: 'error' },
+  rumor: { text: '传闻', color: '#722ed1', alertType: 'warning' },
 };
 
 interface ContentDetailDrawerProps {
@@ -117,6 +129,47 @@ export default function ContentDetailDrawer({ open, item, onClose }: ContentDeta
           </div>
         </div>
       )}
+
+      {/* T011: 增强情绪分析展示 */}
+      {item.nlp.enhanced && (() => {
+        const en = item.nlp.enhanced!;
+        const cfg = financialLabelConfig[en.label];
+        return (
+          <>
+            <Divider>
+              <RobotOutlined style={{ marginRight: 4 }} />
+              金融语义情绪分析
+              <Tooltip title={`分析来源：${en.modelSource === 'llm' ? '大模型' : '词典模型'}`}>
+                <Tag style={{ marginLeft: 8, cursor: 'default' }} color="geekblue">
+                  {en.modelSource === 'llm' ? '大模型' : '词典'}
+                </Tag>
+              </Tooltip>
+            </Divider>
+            <Alert
+              type={cfg.alertType ?? 'info'}
+              message={
+                <Space>
+                  <Tag color={cfg.color} style={{ fontSize: 13, padding: '2px 8px' }}>{cfg.text}</Tag>
+                  <Typography.Text type="secondary">
+                    置信度：{Math.round(en.confidence * 100)}%
+                    {en.secondaryAnalysis && <Tag color="volcano" style={{ marginLeft: 8 }}>高影响内容</Tag>}
+                  </Typography.Text>
+                </Space>
+              }
+              description={<Typography.Text type="secondary" style={{ fontSize: 12 }}>{en.reasoning}</Typography.Text>}
+              style={{ marginBottom: 12 }}
+            />
+            {(en.positiveSignals.length > 0 || en.negativeSignals.length > 0 || en.riskSignals.length > 0 || en.rumorSignals.length > 0) && (
+              <Space wrap style={{ marginBottom: 8 }}>
+                {en.positiveSignals.map((s) => <Tag key={s} color="success">{s}</Tag>)}
+                {en.negativeSignals.map((s) => <Tag key={s} color="error">{s}</Tag>)}
+                {en.riskSignals.map((s) => <Tag key={s} color="volcano">⚠ {s}</Tag>)}
+                {en.rumorSignals.map((s) => <Tag key={s} color="purple">传闻: {s}</Tag>)}
+              </Space>
+            )}
+          </>
+        );
+      })()}
 
       <Divider>命中方案</Divider>
       {item.matches.map((m) => (

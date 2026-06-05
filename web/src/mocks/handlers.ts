@@ -196,7 +196,28 @@ export const handlers = [
     return HttpResponse.json(item);
   }),
 
-  // Monitoring Projects
+  // T011: 增强情绪二次分析（Mock 版，模拟词典分析结果）
+  http.post('/api/v1/contents/:id/sentiment/analyze', async ({ params }) => {
+    await delay(400);
+    const item = contents.find((c) => c.id === params.id);
+    if (!item) return new HttpResponse(null, { status: 404 });
+    // 返回已存在的 enhanced 数据，或生成一个演示结果
+    if (item.nlp.enhanced) return HttpResponse.json(item.nlp.enhanced);
+    const sentimentLabel = item.nlp.sentimentLabel;
+    const mockEnhanced = {
+      label: sentimentLabel === 'positive' ? 'weak_positive' : sentimentLabel === 'negative' ? 'weak_negative' : 'neutral',
+      confidence: 0.72,
+      reasoning: '判断为【弱利好】。 正面信号：利好、增持。 来源为券商研报，专业性较高。',
+      secondaryAnalysis: false,
+      modelSource: 'dictionary' as const,
+      positiveSignals: sentimentLabel === 'positive' ? ['利好', '增持'] : [],
+      negativeSignals: sentimentLabel === 'negative' ? ['利空', '下跌'] : [],
+      riskSignals: item.nlp.riskLevel === 'high' || item.nlp.riskLevel === 'critical' ? ['风险'] : [],
+      rumorSignals: [],
+    };
+    return HttpResponse.json(mockEnhanced);
+  }),
+
   http.get('/api/v1/monitoring-projects', async ({ request }) => {
     await delay(200);
     const url = new URL(request.url);

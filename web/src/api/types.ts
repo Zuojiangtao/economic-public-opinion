@@ -9,6 +9,36 @@ export type UserRole = 'admin' | 'analyst' | 'operator';
 export type LexiconCategory = 'brand' | 'competitor' | 'risk' | 'synonym' | 'stop';
 export type EntityType = 'company' | 'person' | 'product' | 'industry' | 'index';
 
+// ==================== T011 金融语义情绪模型 ====================
+
+/** 精细金融情绪标签 */
+export type FinancialSentimentLabel =
+  | 'strong_positive'  // 强利好
+  | 'weak_positive'    // 弱利好
+  | 'neutral'          // 中性
+  | 'weak_negative'    // 弱利空
+  | 'strong_negative'  // 强利空
+  | 'risk'             // 风险
+  | 'rumor';           // 传闻
+
+export type SentimentModelSource = 'dictionary' | 'llm';
+
+/** 金融语义情绪增强分析结果 */
+export interface EnhancedSentimentResult {
+  label: FinancialSentimentLabel;
+  /** 置信度 0-1 */
+  confidence: number;
+  /** 判断理由 */
+  reasoning: string;
+  /** 是否经过二次深度分析 */
+  secondaryAnalysis: boolean;
+  modelSource: SentimentModelSource;
+  positiveSignals: string[];
+  negativeSignals: string[];
+  riskSignals: string[];
+  rumorSignals: string[];
+}
+
 // ==================== Source Configs (T006) ====================
 
 export type AuthorizationStatus = 'authorized' | 'unauthorized' | 'restricted';
@@ -72,6 +102,8 @@ export interface ContentNlp {
   riskLevel: RiskLevel;
   summary: string;
   entities: ContentEntity[];
+  /** T011: 金融语义情绪增强分析 */
+  enhanced?: EnhancedSentimentResult;
 }
 
 export interface ContentDedup {

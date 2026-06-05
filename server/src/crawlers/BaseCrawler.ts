@@ -2,6 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 import type { ContentItem, CrawlerConfig, CrawlerStatus, CrawlResult, SourceType, MarketType } from '../types.js';
 import { DEFAULT_CRAWLER_CONFIG, CRAWL_DELAY_MS } from '../config.js';
 import { analyzeSentiment } from '../nlp/sentiment.js';
+import { analyzeFinancialSentiment, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
 import { v4 as uuid } from 'uuid';
 
 export abstract class BaseCrawler {
@@ -94,7 +95,9 @@ export abstract class BaseCrawler {
 
     try {
       const rawItems = await this.fetchWithRetry();
-      const items = rawItems.map((item) => this.enrichItem(item, fetchedAt));
+      const basicItems = rawItems.map((item) => this.enrichItem(item, fetchedAt));
+      // T011: 批量执行增强情绪分析（词典模型为同步逻辑，Promise.all 无阻塞风险）
+      const items = await Promise.all(basicItems.map((item) => this.enrichItemEnhanced(item)));
 
       this.status.lastCrawlAt = fetchedAt;
       this.status.lastSuccess = true;
@@ -205,6 +208,25 @@ export abstract class BaseCrawler {
     if (!item.metrics) item.metrics = {};
     if (!item.dedup) item.dedup = { clusterId: '', similarCount: 0 };
 
+    return item;
+  }
+
+  /**
+   * 异步完成 T011 增强情绪分析，将结果写入 item.nlp.enhanced。
+   * 调用方可在 doFetch 中 await 此方法，或在爬虫结果入库前批量调用。
+   */
+  protected async enrichItemEnhanced(item: ContentItem): Promise<ContentItem> {
+    const enhanced = await analyzeFinancialSentiment(
+      item.title + ' ' + (item.content ?? ''),
+      item.sourceType,
+    );
+    // 用增强模型的三分类覆盖基础标签，保持一致性
+    const baseSentiment = toBaseSentimentLabel(enhanced.label);
+    item.nlp = {
+      ...item.nlp,
+      sentimentLabel: baseSentiment,
+      enhanced,
+    };
     return item;
   }
 

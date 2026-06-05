@@ -33,6 +33,43 @@ export type SentimentLabel = 'positive' | 'neutral' | 'negative';
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type MarketType = 'cn' | 'hk' | 'us';  // A股/港股/美股
 
+// ==================== T011 金融语义情绪模型 ====================
+
+/** 精细金融情绪标签 */
+export type FinancialSentimentLabel =
+  | 'strong_positive'  // 强利好
+  | 'weak_positive'    // 弱利好
+  | 'neutral'          // 中性
+  | 'weak_negative'    // 弱利空
+  | 'strong_negative'  // 强利空
+  | 'risk'             // 风险
+  | 'rumor';           // 传闻
+
+/** 分析来源 */
+export type SentimentModelSource = 'dictionary' | 'llm';
+
+/** 金融语义情绪增强分析结果 */
+export interface EnhancedSentimentResult {
+  /** 精细情绪标签 */
+  label: FinancialSentimentLabel;
+  /** 置信度 0-1 */
+  confidence: number;
+  /** 判断理由（关键词/规则驱动的解释） */
+  reasoning: string;
+  /** 是否经过二次深度分析（高影响内容） */
+  secondaryAnalysis: boolean;
+  /** 分析来源 */
+  modelSource: SentimentModelSource;
+  /** 命中的正面关键词 */
+  positiveSignals: string[];
+  /** 命中的负面关键词 */
+  negativeSignals: string[];
+  /** 命中的风险关键词 */
+  riskSignals: string[];
+  /** 命中的传闻关键词 */
+  rumorSignals: string[];
+}
+
 export interface ContentMetrics {
   likes?: number;
   comments?: number;
@@ -51,6 +88,8 @@ export interface ContentNlp {
   riskLevel: RiskLevel;
   summary: string;
   entities: ContentEntity[];
+  /** T011: 金融语义情绪增强分析 */
+  enhanced?: EnhancedSentimentResult;
 }
 
 export interface ContentItem {

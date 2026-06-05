@@ -26,6 +26,7 @@ import { queryCrawlLogs } from '../storage/crawlLogsStore.js';
 import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
 import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType, AlertRule, Alert, AlertStatus } from '../types.js';
 import { evaluateAlertRules } from '../alerts/alertEvaluationService.js';
+import { analyzeFinancialSentiment, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
 
 export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): Router {
   const router = Router();
@@ -100,7 +101,41 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     res.json(item);
   });
 
-  // ==================== Monitoring Projects (in-memory) ====================
+  // ==================== T011 金融语义情绪二次分析 ====================
+
+  /**
+   * POST /contents/:id/sentiment/analyze
+   * 对指定内容触发（或重跑）增强情绪分析，返回 EnhancedSentimentResult。
+   * 前端可在内容详情页手动触发，也可在告警详情中追溯。
+   */
+  router.post('/contents/:id/sentiment/analyze', async (req, res) => {
+    const item = storage.getById(req.params.id);
+    if (!item) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '内容不存在' });
+      return;
+    }
+    try {
+      const enhanced = await analyzeFinancialSentiment(
+        item.title + ' ' + (item.content ?? ''),
+        item.sourceType,
+      );
+      // 同步更新存储中的条目
+      const updated = {
+        ...item,
+        nlp: {
+          ...item.nlp,
+          sentimentLabel: toBaseSentimentLabel(enhanced.label),
+          enhanced,
+        },
+      };
+      storage.upsert(updated);
+      res.json(enhanced);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      res.status(500).json({ code: 'ANALYSIS_ERROR', message: msg });
+    }
+  });
+
 
   router.get('/monitoring-projects', (req, res) => {
     const page = parseInt(req.query.page as string) || 1;
