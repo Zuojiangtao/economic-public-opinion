@@ -39,6 +39,43 @@ export interface EnhancedSentimentResult {
   rumorSignals: string[];
 }
 
+// ==================== T012 结构化事件识别 ====================
+
+export type FinancialEventType =
+  | 'policy_change'
+  | 'earnings_forecast'
+  | 'shareholding_change'
+  | 'merger_acquisition'
+  | 'regulatory_penalty'
+  | 'debt_default'
+  | 'industry_prosperity'
+  | 'rating_change';
+
+export type EventImpactDirection = 'positive' | 'negative' | 'neutral' | 'uncertain';
+
+export interface StructuredEvent {
+  type: FinancialEventType;
+  impactDirection: EventImpactDirection;
+  confidence: number;
+  triggers: string[];
+  subjects: string[];
+  summary: string;
+}
+
+export interface EventTypeDistributionItem {
+  type: FinancialEventType;
+  count: number;
+  positiveCount: number;
+  negativeCount: number;
+  neutralCount: number;
+  uncertainCount: number;
+}
+
+export interface EventDistribution {
+  total: number;
+  distribution: EventTypeDistributionItem[];
+}
+
 // ==================== Source Configs (T006) ====================
 
 export type AuthorizationStatus = 'authorized' | 'unauthorized' | 'restricted';
@@ -104,6 +141,8 @@ export interface ContentNlp {
   entities: ContentEntity[];
   /** T011: 金融语义情绪增强分析 */
   enhanced?: EnhancedSentimentResult;
+  /** T012: 结构化事件识别结果 */
+  events?: StructuredEvent[];
 }
 
 export interface ContentDedup {

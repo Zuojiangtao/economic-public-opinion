@@ -28,8 +28,8 @@ import {
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
-import { temperaturesApi } from '@/api/client.ts';
-import type { TemperatureSnapshot, TemperatureLevel, TemperatureDetail } from '@/api/types.ts';
+import { temperaturesApi, contentsApi } from '@/api/client.ts';
+import type { TemperatureSnapshot, TemperatureLevel, TemperatureDetail, FinancialEventType } from '@/api/types.ts';
 
 // ============================================================
 // 温度分层展示配置
@@ -53,6 +53,31 @@ function getProgressColor(score: number) {
   if (score >= 20) return '#52c41a';
   return '#722ed1';
 }
+
+// ============================================================
+// 事件类型展示配置（T012）
+// ============================================================
+const eventTypeLabel: Record<FinancialEventType, string> = {
+  policy_change:       '政策变化',
+  earnings_forecast:   '业绩预告',
+  shareholding_change: '增减持',
+  merger_acquisition:  '并购重组',
+  regulatory_penalty:  '监管处罚',
+  debt_default:        '债务违约',
+  industry_prosperity: '产业景气',
+  rating_change:       '研报评级',
+};
+
+const eventTypeColor: Record<FinancialEventType, string> = {
+  policy_change:       'blue',
+  earnings_forecast:   'green',
+  shareholding_change: 'gold',
+  merger_acquisition:  'purple',
+  regulatory_penalty:  'red',
+  debt_default:        'volcano',
+  industry_prosperity: 'cyan',
+  rating_change:       'geekblue',
+};
 
 // ============================================================
 // 单行业温度卡片
@@ -247,6 +272,13 @@ function TemperatureDetailDrawer({
   const { data: trend } = useQuery({
     queryKey: ['temperature-trend', snap?.industryId, granularity],
     queryFn: () => temperaturesApi.getTrend(snap!.industryId, { granularity, limit: 24 }),
+    enabled: !!snap,
+  });
+
+  // 拉取事件类型分布（T012）
+  const { data: eventDist } = useQuery({
+    queryKey: ['temperature-events', snap?.industryId],
+    queryFn: () => contentsApi.getEventDistribution({ industryId: snap!.industryId }),
     enabled: !!snap,
   });
 
@@ -460,6 +492,65 @@ function TemperatureDetailDrawer({
       <Typography.Text type="secondary" style={{ display: 'block', marginTop: 16, fontSize: 12 }}>
         快照时间：{new Date(snap.snapshotAt).toLocaleString('zh-CN')}
       </Typography.Text>
+
+      {/* T012: 事件类型分布 */}
+      {eventDist && eventDist.distribution.length > 0 && (
+        <>
+          <Typography.Title level={5} style={{ marginTop: 16 }}>关键事件分布</Typography.Title>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {eventDist.distribution.map((item) => (
+              <Tooltip
+                key={item.type}
+                title={
+                  <div>
+                    <div>正面: {item.positiveCount}  负面: {item.negativeCount}</div>
+                    <div>中性: {item.neutralCount}  不确定: {item.uncertainCount}</div>
+                  </div>
+                }
+              >
+                <Tag color={eventTypeColor[item.type as FinancialEventType]} style={{ cursor: 'default' }}>
+                  {eventTypeLabel[item.type as FinancialEventType]} ×{item.count}
+                </Tag>
+              </Tooltip>
+            ))}
+          </div>
+          <ReactECharts
+            style={{ height: 160 }}
+            option={{
+              tooltip: { trigger: 'axis' as const, axisPointer: { type: 'shadow' as const } },
+              grid: { left: 80, right: 16, top: 8, bottom: 8 },
+              xAxis: { type: 'value' as const, minInterval: 1 },
+              yAxis: {
+                type: 'category' as const,
+                data: eventDist.distribution.map((i) => eventTypeLabel[i.type as FinancialEventType]),
+              },
+              series: [
+                {
+                  name: '正面',
+                  type: 'bar',
+                  stack: 'total',
+                  data: eventDist.distribution.map((i) => i.positiveCount),
+                  itemStyle: { color: '#52c41a' },
+                },
+                {
+                  name: '负面',
+                  type: 'bar',
+                  stack: 'total',
+                  data: eventDist.distribution.map((i) => i.negativeCount),
+                  itemStyle: { color: '#ff4d4f' },
+                },
+                {
+                  name: '中性/不确定',
+                  type: 'bar',
+                  stack: 'total',
+                  data: eventDist.distribution.map((i) => i.neutralCount + i.uncertainCount),
+                  itemStyle: { color: '#d9d9d9' },
+                },
+              ],
+            }}
+          />
+        </>
+      )}
     </Drawer>
   );
 }
@@ -574,7 +665,7 @@ export default function TemperaturePage() {
       {/* 偏冷 / 冰点 */}
       {coldItems.length > 0 && (
         <div>
-          <Typography.Text style={{ color: '#722ed1' }} strong style={{ display: 'block', marginBottom: 8 }}>
+          <Typography.Text strong style={{ color: '#722ed1', display: 'block', marginBottom: 8 }}>
             <ArrowDownOutlined /> 低温板块
           </Typography.Text>
           <Row gutter={[12, 12]}>

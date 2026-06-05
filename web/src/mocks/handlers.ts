@@ -218,6 +218,65 @@ export const handlers = [
     return HttpResponse.json(mockEnhanced);
   }),
 
+  // T012: 结构化事件识别 - 单条内容分析
+  http.post('/api/v1/contents/:id/events/analyze', async ({ params }) => {
+    await delay(300);
+    const item = contents.find((c) => c.id === params.id);
+    if (!item) return new HttpResponse(null, { status: 404 });
+    if (item.nlp.events) return HttpResponse.json(item.nlp.events);
+    // 生成演示事件结果
+    const mockEvents = item.nlp.riskLevel === 'high' || item.nlp.riskLevel === 'critical'
+      ? [{ type: 'regulatory_penalty', impactDirection: 'negative', confidence: 0.75, triggers: ['监管', '处罚'], subjects: [], summary: '监管处罚（负面影响）：命中词「监管、处罚」' }]
+      : item.nlp.sentimentLabel === 'positive'
+        ? [{ type: 'earnings_forecast', impactDirection: 'positive', confidence: 0.70, triggers: ['业绩', '增长'], subjects: [], summary: '业绩预告（正面影响）：命中词「业绩、增长」' }]
+        : [];
+    return HttpResponse.json(mockEvents);
+  }),
+
+  // T012: 事件类型分布统计
+  http.get('/api/v1/contents/events/distribution', async ({ request }) => {
+    await delay(300);
+    const url = new URL(request.url);
+    const industryId = url.searchParams.get('industryId');
+    // 从 mock 内容中统计事件分布
+    let filtered = contents;
+    if (industryId) {
+      // 简单模拟：根据行业ID的末尾数字决定返回哪些内容
+      const idx = parseInt(industryId.replace(/\D/g, '').slice(-1) || '0');
+      filtered = contents.slice(idx % 3, contents.length);
+    }
+    const typeCounts: Record<string, { count: number; positiveCount: number; negativeCount: number; neutralCount: number; uncertainCount: number }> = {};
+    for (const item of filtered) {
+      const events = item.nlp.events ?? [];
+      for (const evt of events) {
+        if (!typeCounts[evt.type]) {
+          typeCounts[evt.type] = { count: 0, positiveCount: 0, negativeCount: 0, neutralCount: 0, uncertainCount: 0 };
+        }
+        typeCounts[evt.type].count += 1;
+        if (evt.impactDirection === 'positive')  typeCounts[evt.type].positiveCount  += 1;
+        if (evt.impactDirection === 'negative')  typeCounts[evt.type].negativeCount  += 1;
+        if (evt.impactDirection === 'neutral')   typeCounts[evt.type].neutralCount   += 1;
+        if (evt.impactDirection === 'uncertain') typeCounts[evt.type].uncertainCount += 1;
+      }
+    }
+    // 如果 mock 内容没有 events，提供示例分布数据
+    if (Object.keys(typeCounts).length === 0) {
+      const exampleDist = [
+        { type: 'policy_change',       count: 8,  positiveCount: 5, negativeCount: 2, neutralCount: 1, uncertainCount: 0 },
+        { type: 'earnings_forecast',   count: 6,  positiveCount: 4, negativeCount: 1, neutralCount: 1, uncertainCount: 0 },
+        { type: 'rating_change',       count: 5,  positiveCount: 3, negativeCount: 2, neutralCount: 0, uncertainCount: 0 },
+        { type: 'industry_prosperity', count: 4,  positiveCount: 2, negativeCount: 1, neutralCount: 1, uncertainCount: 0 },
+        { type: 'regulatory_penalty',  count: 3,  positiveCount: 0, negativeCount: 3, neutralCount: 0, uncertainCount: 0 },
+        { type: 'shareholding_change', count: 2,  positiveCount: 1, negativeCount: 1, neutralCount: 0, uncertainCount: 0 },
+      ];
+      return HttpResponse.json({ total: filtered.length, distribution: exampleDist });
+    }
+    const distribution = Object.entries(typeCounts)
+      .map(([type, counts]) => ({ type, ...counts }))
+      .sort((a, b) => b.count - a.count);
+    return HttpResponse.json({ total: filtered.length, distribution });
+  }),
+
   http.get('/api/v1/monitoring-projects', async ({ request }) => {
     await delay(200);
     const url = new URL(request.url);

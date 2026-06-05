@@ -27,6 +27,7 @@ import type { CrawlScheduler } from '../scheduler/CrawlScheduler.js';
 import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType, AlertRule, Alert, AlertStatus } from '../types.js';
 import { evaluateAlertRules } from '../alerts/alertEvaluationService.js';
 import { analyzeFinancialSentiment, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
+import { recognizeEvents } from '../nlp/eventRecognitionService.js';
 
 export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): Router {
   const router = Router();
@@ -136,6 +137,101 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     }
   });
 
+  // ==================== T012 结构化事件识别 ====================
+
+  /**
+   * GET /contents/events/distribution
+   * 返回全库（或按 industryId / projectId 过滤）的事件类型分布统计。
+   * Query:
+   *   industryId  = 行业 ID，仅统计该行业关键词命中的内容
+   *   projectId   = 监测方案 ID
+   *   startDate   = ISO 日期字符串
+   *   endDate     = ISO 日期字符串
+   */
+  router.get('/contents/events/distribution', (req, res) => {
+    const industryId = req.query.industryId as string | undefined;
+    const projectId  = req.query.projectId  as string | undefined;
+    const startDate  = req.query.startDate  as string | undefined;
+    const endDate    = req.query.endDate    as string | undefined;
+
+    let items = storage.getAll();
+
+    // 日期过滤
+    if (startDate) items = items.filter((i) => i.publishedAt >= startDate);
+    if (endDate)   items = items.filter((i) => i.publishedAt <= endDate);
+
+    // 行业过滤：按行业关键词是否命中
+    if (industryId) {
+      const industry = Array.from(loadIndustryMappingsMap().values()).find((m) => m.id === industryId);
+      if (industry) {
+        const kws = [...industry.keywords, ...industry.synonyms].map((k) => k.toLowerCase());
+        items = items.filter((i) =>
+          kws.some((k) => (i.title + ' ' + (i.content ?? '')).toLowerCase().includes(k)),
+        );
+      }
+    }
+
+    // 监测方案过滤
+    if (projectId) {
+      const p = projects.get(projectId);
+      if (p) {
+        const include = [...(p.keywords?.core ?? p.keywords?.include ?? []), ...(p.keywords?.extended ?? [])].map((k: string) => k.toLowerCase());
+        const exclude = (p.keywords?.exclude ?? []).map((k: string) => k.toLowerCase());
+        items = items.filter((i) => {
+          const text = (i.title + ' ' + (i.content ?? '')).toLowerCase();
+          return include.some((k: string) => text.includes(k)) && !exclude.some((k: string) => text.includes(k));
+        });
+      }
+    }
+
+    // 统计事件类型分布
+    const typeCounts: Record<string, { count: number; positiveCount: number; negativeCount: number; neutralCount: number; uncertainCount: number }> = {};
+    for (const item of items) {
+      const events = item.nlp?.events ?? [];
+      for (const evt of events) {
+        if (!typeCounts[evt.type]) {
+          typeCounts[evt.type] = { count: 0, positiveCount: 0, negativeCount: 0, neutralCount: 0, uncertainCount: 0 };
+        }
+        typeCounts[evt.type].count += 1;
+        const dir = evt.impactDirection;
+        if (dir === 'positive')  typeCounts[evt.type].positiveCount  += 1;
+        if (dir === 'negative')  typeCounts[evt.type].negativeCount  += 1;
+        if (dir === 'neutral')   typeCounts[evt.type].neutralCount   += 1;
+        if (dir === 'uncertain') typeCounts[evt.type].uncertainCount += 1;
+      }
+    }
+
+    const distribution = Object.entries(typeCounts).map(([type, counts]) => ({ type, ...counts }))
+      .sort((a, b) => b.count - a.count);
+
+    res.json({
+      total: items.length,
+      distribution,
+    });
+  });
+
+  /**
+   * POST /contents/:id/events/analyze
+   * 对指定内容触发（或重跑）结构化事件识别，返回 StructuredEvent[]。
+   */
+  router.post('/contents/:id/events/analyze', (req, res) => {
+    const item = storage.getById(req.params.id);
+    if (!item) {
+      res.status(404).json({ code: 'NOT_FOUND', message: '内容不存在' });
+      return;
+    }
+    const text = item.title + ' ' + (item.content ?? '');
+    const events = recognizeEvents(text);
+    const updated = {
+      ...item,
+      nlp: {
+        ...item.nlp,
+        events: events.length > 0 ? events : undefined,
+      },
+    };
+    storage.upsert(updated);
+    res.json(events);
+  });
 
   router.get('/monitoring-projects', (req, res) => {
     const page = parseInt(req.query.page as string) || 1;

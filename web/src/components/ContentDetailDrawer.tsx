@@ -6,8 +6,9 @@ import {
   EyeOutlined,
   LinkOutlined,
   RobotOutlined,
+  ApartmentOutlined,
 } from '@ant-design/icons';
-import type { ContentItem, FinancialSentimentLabel } from '../api/types';
+import type { ContentItem, FinancialSentimentLabel, FinancialEventType } from '../api/types';
 
 const sourceTypeLabels: Record<string, string> = {
   news: '新闻',
@@ -45,6 +46,36 @@ const financialLabelConfig: Record<FinancialSentimentLabel, { text: string; colo
   strong_negative: { text: '强利空', color: '#f5222d', alertType: 'error' },
   risk: { text: '风险', color: '#cf1322', alertType: 'error' },
   rumor: { text: '传闻', color: '#722ed1', alertType: 'warning' },
+};
+
+// T012: 事件类型展示配置
+const eventTypeLabel: Record<FinancialEventType, string> = {
+  policy_change:       '政策变化',
+  earnings_forecast:   '业绩预告',
+  shareholding_change: '增减持',
+  merger_acquisition:  '并购重组',
+  regulatory_penalty:  '监管处罚',
+  debt_default:        '债务违约',
+  industry_prosperity: '产业景气',
+  rating_change:       '研报评级',
+};
+
+const eventTypeColor: Record<FinancialEventType, string> = {
+  policy_change:       'blue',
+  earnings_forecast:   'green',
+  shareholding_change: 'gold',
+  merger_acquisition:  'purple',
+  regulatory_penalty:  'red',
+  debt_default:        'volcano',
+  industry_prosperity: 'cyan',
+  rating_change:       'geekblue',
+};
+
+const eventImpactLabel: Record<string, { text: string; color: string }> = {
+  positive:  { text: '正面',   color: '#52c41a' },
+  negative:  { text: '负面',   color: '#f5222d' },
+  neutral:   { text: '中性',   color: '#1677ff' },
+  uncertain: { text: '不确定', color: '#fa8c16' },
 };
 
 interface ContentDetailDrawerProps {
@@ -167,6 +198,48 @@ export default function ContentDetailDrawer({ open, item, onClose }: ContentDeta
                 {en.rumorSignals.map((s) => <Tag key={s} color="purple">传闻: {s}</Tag>)}
               </Space>
             )}
+          </>
+        );
+      })()}
+
+      {/* T012: 结构化事件识别展示 */}
+      {item.nlp.events && item.nlp.events.length > 0 && (() => {
+        const events = item.nlp.events!;
+        return (
+          <>
+            <Divider>
+              <ApartmentOutlined style={{ marginRight: 4 }} />
+              结构化事件识别
+            </Divider>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {events.map((evt, idx) => {
+                const impactCfg = eventImpactLabel[evt.impactDirection] ?? { text: '未知', color: '#999' };
+                return (
+                  <div key={idx} style={{ background: '#fafafa', border: '1px solid #f0f0f0', borderRadius: 6, padding: '8px 12px' }}>
+                    <Space wrap>
+                      <Tag color={eventTypeColor[evt.type as FinancialEventType]}>
+                        {eventTypeLabel[evt.type as FinancialEventType]}
+                      </Tag>
+                      <Tag color={impactCfg.color.startsWith('#') ? undefined : impactCfg.color}
+                           style={impactCfg.color.startsWith('#') ? { color: '#fff', background: impactCfg.color, borderColor: impactCfg.color } : undefined}>
+                        {impactCfg.text}
+                      </Tag>
+                      <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                        置信度 {Math.round(evt.confidence * 100)}%
+                      </Typography.Text>
+                    </Space>
+                    <div style={{ marginTop: 4, fontSize: 12, color: '#666' }}>{evt.summary}</div>
+                    {evt.triggers.length > 0 && (
+                      <div style={{ marginTop: 4 }}>
+                        {evt.triggers.slice(0, 5).map((t) => (
+                          <Tag key={t} style={{ fontSize: 11, margin: '2px 2px' }}>{t}</Tag>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </>
         );
       })()}

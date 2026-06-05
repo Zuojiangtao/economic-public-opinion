@@ -82,6 +82,40 @@ export interface ContentEntity {
   type: 'company' | 'person' | 'product' | 'industry' | 'index';
 }
 
+// ==================== T012 结构化事件识别 ====================
+
+/**
+ * 金融事件类型枚举
+ */
+export type FinancialEventType =
+  | 'policy_change'          // 政策变化
+  | 'earnings_forecast'      // 业绩预告
+  | 'shareholding_change'    // 增减持
+  | 'merger_acquisition'     // 并购重组
+  | 'regulatory_penalty'     // 监管处罚
+  | 'debt_default'           // 债务违约
+  | 'industry_prosperity'    // 产业景气变化
+  | 'rating_change';         // 研报评级变化
+
+/** 事件影响方向 */
+export type EventImpactDirection = 'positive' | 'negative' | 'neutral' | 'uncertain';
+
+/** 结构化事件识别结果 */
+export interface StructuredEvent {
+  /** 事件类型 */
+  type: FinancialEventType;
+  /** 事件影响方向 */
+  impactDirection: EventImpactDirection;
+  /** 置信度 0-1 */
+  confidence: number;
+  /** 命中的关键词/触发词 */
+  triggers: string[];
+  /** 识别出的关联主体（公司/行业/人名等） */
+  subjects: string[];
+  /** 事件摘要（简短描述） */
+  summary: string;
+}
+
 export interface ContentNlp {
   sentiment: number;
   sentimentLabel: SentimentLabel;
@@ -90,6 +124,8 @@ export interface ContentNlp {
   entities: ContentEntity[];
   /** T011: 金融语义情绪增强分析 */
   enhanced?: EnhancedSentimentResult;
+  /** T012: 结构化事件识别结果 */
+  events?: StructuredEvent[];
 }
 
 export interface ContentItem {

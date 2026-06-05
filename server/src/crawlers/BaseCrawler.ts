@@ -3,6 +3,7 @@ import type { ContentItem, CrawlerConfig, CrawlerStatus, CrawlResult, SourceType
 import { DEFAULT_CRAWLER_CONFIG, CRAWL_DELAY_MS } from '../config.js';
 import { analyzeSentiment } from '../nlp/sentiment.js';
 import { analyzeFinancialSentiment, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
+import { recognizeEvents } from '../nlp/eventRecognitionService.js';
 import { v4 as uuid } from 'uuid';
 
 export abstract class BaseCrawler {
@@ -213,19 +214,21 @@ export abstract class BaseCrawler {
 
   /**
    * 异步完成 T011 增强情绪分析，将结果写入 item.nlp.enhanced。
+   * T012: 同步运行结构化事件识别，将结果写入 item.nlp.events。
    * 调用方可在 doFetch 中 await 此方法，或在爬虫结果入库前批量调用。
    */
   protected async enrichItemEnhanced(item: ContentItem): Promise<ContentItem> {
-    const enhanced = await analyzeFinancialSentiment(
-      item.title + ' ' + (item.content ?? ''),
-      item.sourceType,
-    );
+    const text = item.title + ' ' + (item.content ?? '');
+    const enhanced = await analyzeFinancialSentiment(text, item.sourceType);
     // 用增强模型的三分类覆盖基础标签，保持一致性
     const baseSentiment = toBaseSentimentLabel(enhanced.label);
+    // T012: 结构化事件识别
+    const events = recognizeEvents(text);
     item.nlp = {
       ...item.nlp,
       sentimentLabel: baseSentiment,
       enhanced,
+      events: events.length > 0 ? events : undefined,
     };
     return item;
   }

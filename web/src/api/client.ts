@@ -30,6 +30,8 @@ import type {
   SourceConfigUpdateInput,
   SourceType,
   EnhancedSentimentResult,
+  StructuredEvent,
+  EventDistribution,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -85,6 +87,12 @@ export const contentsApi = {
   /** T011: 触发指定内容的增强情绪二次分析 */
   analyzeSentiment: (id: string) =>
     request<EnhancedSentimentResult>(`/contents/${id}/sentiment/analyze`, { method: 'POST' }),
+  /** T012: 触发指定内容的结构化事件识别 */
+  analyzeEvents: (id: string) =>
+    request<StructuredEvent[]>(`/contents/${id}/events/analyze`, { method: 'POST' }),
+  /** T012: 获取事件类型分布统计 */
+  getEventDistribution: (params?: { industryId?: string; projectId?: string; startDate?: string; endDate?: string }) =>
+    request<EventDistribution>(`/contents/events/distribution${toQuery((params || {}) as Record<string, unknown>)}`),
 };
 
 export const monitoringApi = {

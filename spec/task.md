@@ -333,7 +333,9 @@
 - 系统可区分普通负面新闻、重大风险事件、传闻和研报谨慎观点。
 - 情绪结果包含置信度和解释。
 
-### T012 结构化事件识别 ⬜ 未开始
+### T012 结构化事件识别 ✅ 已完成
+
+> **已实现**：事件类型枚举（`FinancialEventType`）8 种金融事件：政策变化、业绩预告、增减持、并购重组、监管处罚、债务违约、产业景气变化、研报评级变化；事件识别服务（`server/src/nlp/eventRecognitionService.ts`）基于关键词模式匹配，输出类型、影响方向（正面/负面/中性/不确定）、置信度、触发词、关联主体、摘要；`BaseCrawler.enrichItemEnhanced()` 在每次采集后自动附加事件识别；结果存储于 `ContentNlp.events`；新增 `GET /contents/events/distribution` 接口（支持按行业/监测方案/时间过滤）和 `POST /contents/:id/events/analyze` 接口；温度详情抽屉新增「关键事件分布」堆叠柱状图；`ContentDetailDrawer` 展示每条内容识别到的结构化事件；MSW Mock handler 覆盖；前端类型（`FinancialEventType`、`StructuredEvent`、`EventDistribution`）已同步到 `web/src/api/types.ts`。
 
 **任务类别**：模型能力
 
@@ -535,7 +537,7 @@
 | 9 | T008 | 数据库存储升级 | P1 | T001-T007 | ⬜ 未开始 |
 | 10 | T009 | 采集任务稳定性增强 | P1 | T006 | ✅ 已完成 |
 | 11 | T011 | 金融语义情绪模型 | P2 | T002, T015 | ✅ 已完成 |
-| 12 | T012 | 结构化事件识别 | P2 | T011 | ⬜ 未开始 |
+| 12 | T012 | 结构化事件识别 | P2 | T011 | ✅ 已完成 |
 | 13 | T013 | 主体相关度评分 | P2 | T001, T011 | ⬜ 未开始 |
 | 14 | T014 | 行情数据联动 | P2 | T002 | ⬜ 未开始 |
 | 15 | T015 | 回测评估体系 | P2 | T002, T008, T014 | ⬜ 未开始 |
