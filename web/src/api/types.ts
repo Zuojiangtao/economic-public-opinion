@@ -332,6 +332,8 @@ export interface TemperatureSnapshot {
   industryId: string;
   industryName: string;
   score: number;
+  /** 与上一快照的温度差，正为升温，负为降温 */
+  scoreDelta?: number;
   level: TemperatureLevel;
   breakdown: TemperatureBreakdown;
   contentCount: number;

@@ -14,6 +14,7 @@ import {
   Empty,
   List,
   Badge,
+  Table,
 } from 'antd';
 import {
   FireOutlined,
@@ -22,6 +23,8 @@ import {
   ArrowDownOutlined,
   SnippetsOutlined,
   LinkOutlined,
+  RiseOutlined,
+  FallOutlined,
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
@@ -86,6 +89,15 @@ function TemperatureCard({
         >
           {snap.score}
         </Typography.Title>
+        {snap.scoreDelta !== undefined && snap.scoreDelta !== 0 && (
+          <Tag
+            color={snap.scoreDelta > 0 ? 'red' : 'blue'}
+            icon={snap.scoreDelta > 0 ? <RiseOutlined /> : <FallOutlined />}
+            style={{ margin: 0, fontSize: 11 }}
+          >
+            {snap.scoreDelta > 0 ? '+' : ''}{snap.scoreDelta}
+          </Tag>
+        )}
         <div style={{ flex: 1 }}>
           <Progress
             percent={snap.score}
@@ -111,6 +123,96 @@ function TemperatureCard({
         </span>
       </div>
     </Card>
+  );
+}
+
+// ============================================================
+// 温度变化榜
+// ============================================================
+function ChangeLeaderboard({
+  items,
+  loading,
+  onSelect,
+}: {
+  items: TemperatureSnapshot[];
+  loading: boolean;
+  onSelect: (snap: TemperatureSnapshot) => void;
+}) {
+  const sorted = [...items]
+    .filter((s) => s.scoreDelta !== undefined)
+    .sort((a, b) => Math.abs(b.scoreDelta!) - Math.abs(a.scoreDelta!));
+
+  const rising  = sorted.filter((s) => (s.scoreDelta ?? 0) > 0);
+  const falling = sorted.filter((s) => (s.scoreDelta ?? 0) < 0);
+
+  const columns = [
+    {
+      dataIndex: 'industryName' as const,
+      title: '行业',
+      render: (name: string, record: TemperatureSnapshot) => (
+        <Typography.Link onClick={() => onSelect(record)} style={{ color: 'inherit', fontWeight: 500 }}>
+          {name}
+        </Typography.Link>
+      ),
+    },
+    {
+      dataIndex: 'score' as const,
+      title: '当前',
+      width: 56,
+      render: (v: number) => (
+        <span style={{ color: getProgressColor(v), fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{v}</span>
+      ),
+    },
+    {
+      dataIndex: 'scoreDelta' as const,
+      title: '变化',
+      width: 68,
+      render: (delta: number | undefined) =>
+        delta !== undefined ? (
+          <Tag
+            color={delta > 0 ? 'red' : 'blue'}
+            icon={delta > 0 ? <RiseOutlined /> : <FallOutlined />}
+            style={{ margin: 0, fontVariantNumeric: 'tabular-nums' }}
+          >
+            {delta > 0 ? '+' : ''}{delta}
+          </Tag>
+        ) : null,
+    },
+  ];
+
+  return (
+    <Row gutter={12}>
+      <Col span={12}>
+        <Typography.Text type="danger" strong style={{ display: 'block', marginBottom: 6, fontSize: 12 }}>
+          <RiseOutlined /> 急速升温
+        </Typography.Text>
+        <Table<TemperatureSnapshot>
+          size="small"
+          loading={loading}
+          dataSource={rising}
+          columns={columns}
+          rowKey="id"
+          pagination={false}
+          showHeader={false}
+          locale={{ emptyText: '暂无' }}
+        />
+      </Col>
+      <Col span={12}>
+        <Typography.Text style={{ color: '#1677ff', display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600 }}>
+          <FallOutlined /> 快速降温
+        </Typography.Text>
+        <Table<TemperatureSnapshot>
+          size="small"
+          loading={loading}
+          dataSource={falling}
+          columns={columns}
+          rowKey="id"
+          pagination={false}
+          showHeader={false}
+          locale={{ emptyText: '暂无' }}
+        />
+      </Col>
+    </Row>
   );
 }
 
@@ -220,7 +322,8 @@ function TemperatureDetailDrawer({
   const trendLineOption = trendItems.length > 1
     ? {
         tooltip: { trigger: 'axis' as const },
-        grid: { left: 40, right: 16, top: 20, bottom: 40 },
+        legend: { data: ['温度', '声量'], top: 0, right: 0, textStyle: { fontSize: 11 } },
+        grid: { left: 40, right: 50, top: 28, bottom: 40 },
         xAxis: {
           type: 'category' as const,
           data: trendItems.map((s) =>
@@ -228,15 +331,28 @@ function TemperatureDetailDrawer({
           ),
           axisLabel: { rotate: 40, fontSize: 10 },
         },
-        yAxis: { type: 'value' as const, min: 0, max: 100 },
+        yAxis: [
+          { type: 'value' as const, name: '温度', min: 0, max: 100, nameTextStyle: { fontSize: 10 } },
+          { type: 'value' as const, name: '声量', nameTextStyle: { fontSize: 10 } },
+        ],
         series: [
           {
+            name: '温度',
             type: 'line',
             smooth: true,
+            yAxisIndex: 0,
             data: trendItems.map((s) => s.score),
             lineStyle: { color: cfg.color },
             itemStyle: { color: cfg.color },
             areaStyle: { color: `${cfg.color}22` },
+          },
+          {
+            name: '声量',
+            type: 'bar',
+            yAxisIndex: 1,
+            data: trendItems.map((s) => s.contentCount),
+            itemStyle: { color: '#1677ff44' },
+            barMaxWidth: 12,
           },
         ],
       }
@@ -268,11 +384,11 @@ function TemperatureDetailDrawer({
         </Col>
       </Row>
 
-      {/* 历史趋势折线图 */}
+      {/* 历史趋势折线图 + 声量图 */}
       {trendLineOption && (
         <>
-          <Typography.Title level={5} style={{ marginTop: 20 }}>温度历史趋势</Typography.Title>
-          <ReactECharts option={trendLineOption} style={{ height: 180 }} />
+          <Typography.Title level={5} style={{ marginTop: 20 }}>温度趋势 & 声量</Typography.Title>
+          <ReactECharts option={trendLineOption} style={{ height: 200 }} />
         </>
       )}
 
@@ -403,14 +519,23 @@ export default function TemperaturePage() {
         />
       </div>
 
-      {/* 温度排行榜 */}
-      <Card title="行业温度排行" loading={isLoading} style={{ marginBottom: 16 }}>
-        {items.length > 0 ? (
-          <ReactECharts option={rankOption} style={{ height: 260 }} />
-        ) : (
-          <Empty description="暂无数据" />
-        )}
-      </Card>
+      {/* 温度排行榜 + 变化榜 */}
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col xs={24} lg={14}>
+          <Card title="行业温度排行" loading={isLoading} style={{ height: '100%' }}>
+            {items.length > 0 ? (
+              <ReactECharts option={rankOption} style={{ height: 260 }} />
+            ) : (
+              <Empty description="暂无数据" />
+            )}
+          </Card>
+        </Col>
+        <Col xs={24} lg={10}>
+          <Card title="温度变化榜" loading={isLoading} style={{ height: '100%' }}>
+            <ChangeLeaderboard items={items} loading={isLoading} onSelect={setSelectedSnap} />
+          </Card>
+        </Col>
+      </Row>
 
       {/* 过热 / 偏热 */}
       {hotItems.length > 0 && (

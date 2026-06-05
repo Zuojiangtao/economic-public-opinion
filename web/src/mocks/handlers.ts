@@ -333,14 +333,14 @@ export const handlers = [
     const url = new URL(request.url);
     const granularity = (url.searchParams.get('granularity') || 'hour') as 'hour' | 'day';
 
-    const mockIndustries: { id: string; name: string; score: number; level: TemperatureLevel; bd: [number, number, number, number]; cnt: number; pos: number; neu: number; neg: number }[] = [
-      { id: 'industry-ai',          name: 'AI科技',   score: 82, level: 'hot',      bd: [88, 75, 72, 95], cnt: 124, pos: 80, neu: 30, neg: 14 },
-      { id: 'industry-semiconductor', name: '半导体',  score: 74, level: 'warm',     bd: [72, 68, 65, 90], cnt: 98,  pos: 55, neu: 28, neg: 15 },
-      { id: 'industry-new-energy',  name: '新能源',   score: 61, level: 'neutral',   bd: [65, 55, 58, 75], cnt: 76,  pos: 38, neu: 25, neg: 13 },
-      { id: 'industry-pharma',      name: '医药',     score: 55, level: 'neutral',   bd: [50, 52, 48, 80], cnt: 62,  pos: 28, neu: 22, neg: 12 },
-      { id: 'industry-metals',      name: '有色金属', score: 44, level: 'cool',      bd: [40, 48, 38, 65], cnt: 45,  pos: 18, neu: 16, neg: 11 },
-      { id: 'industry-bank',        name: '银行',     score: 38, level: 'cool',      bd: [35, 40, 30, 70], cnt: 38,  pos: 14, neu: 15, neg: 9  },
-      { id: 'industry-realestate',  name: '房地产',   score: 22, level: 'freezing',  bd: [18, 28, 15, 55], cnt: 30,  pos: 5,  neu: 12, neg: 13 },
+    const mockIndustries: { id: string; name: string; score: number; delta: number; level: TemperatureLevel; bd: [number, number, number, number]; cnt: number; pos: number; neu: number; neg: number }[] = [
+      { id: 'industry-ai',           name: 'AI科技',   score: 82, delta: +12, level: 'hot',     bd: [88, 75, 72, 95], cnt: 124, pos: 80, neu: 30, neg: 14 },
+      { id: 'industry-semiconductor',name: '半导体',   score: 74, delta:  +7, level: 'warm',    bd: [72, 68, 65, 90], cnt: 98,  pos: 55, neu: 28, neg: 15 },
+      { id: 'industry-new-energy',   name: '新能源',   score: 61, delta:  +3, level: 'neutral', bd: [65, 55, 58, 75], cnt: 76,  pos: 38, neu: 25, neg: 13 },
+      { id: 'industry-pharma',       name: '医药',     score: 55, delta:  -2, level: 'neutral', bd: [50, 52, 48, 80], cnt: 62,  pos: 28, neu: 22, neg: 12 },
+      { id: 'industry-metals',       name: '有色金属', score: 44, delta:  -5, level: 'cool',    bd: [40, 48, 38, 65], cnt: 45,  pos: 18, neu: 16, neg: 11 },
+      { id: 'industry-bank',         name: '银行',     score: 38, delta:  -8, level: 'cool',    bd: [35, 40, 30, 70], cnt: 38,  pos: 14, neu: 15, neg: 9  },
+      { id: 'industry-realestate',   name: '房地产',   score: 22, delta: -14, level: 'freezing',bd: [18, 28, 15, 55], cnt: 30,  pos: 5,  neu: 12, neg: 13 },
     ];
 
     const items: TemperatureSnapshot[] = mockIndustries.map((d) => ({
@@ -348,6 +348,7 @@ export const handlers = [
       industryId: d.id,
       industryName: d.name,
       score: d.score,
+      scoreDelta: d.delta,
       level: d.level,
       breakdown: {
         sentimentScore: d.bd[0],
