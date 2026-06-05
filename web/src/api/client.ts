@@ -32,6 +32,9 @@ import type {
   EnhancedSentimentResult,
   StructuredEvent,
   EventDistribution,
+  DashboardSummary,
+  DashboardSummaryParams,
+  CrawlerStatusResponse,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -182,4 +185,13 @@ export const sourceConfigsApi = {
       method: 'POST',
       body: JSON.stringify({ includeInTemperature }),
     }),
+};
+
+export const dashboardApi = {
+  getSummary: (params?: DashboardSummaryParams) =>
+    request<DashboardSummary>(`/dashboard/summary${toQuery((params || {}) as Record<string, unknown>)}`),
+};
+
+export const crawlersApi = {
+  getStatus: () => request<CrawlerStatusResponse>('/crawlers/status'),
 };

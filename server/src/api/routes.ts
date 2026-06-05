@@ -29,6 +29,7 @@ import type { SourceType, SentimentLabel, RiskLevel, MarketType, IndustryType, A
 import { evaluateAlertRules } from '../alerts/alertEvaluationService.js';
 import { analyzeFinancialSentiment, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
 import { recognizeEvents } from '../nlp/eventRecognitionService.js';
+import { buildDashboardSummary } from './dashboardSummaryHandler.js';
 
 export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): Router {
   const router = Router();
@@ -579,6 +580,33 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
   // ==================== Industry Mappings ====================
 
   const industryMappings = loadIndustryMappingsMap();
+
+  // ==================== H006 Dashboard Summary ====================
+  // 注册在 alerts 和 industryMappings 初始化之后，确保闭包捕获到已填充的 Map。
+
+  /**
+   * GET /dashboard/summary
+   * 首页聚合接口：聚合预警数字、行业温度、高优先级预警、关键内容、
+   * 事件分布、采集健康和监测方案命中排行。
+   * Query: startDate, endDate, market (cn|hk|us), projectId
+   */
+  router.get('/dashboard/summary', (req, res) => {
+    const summary = buildDashboardSummary(
+      storage,
+      alerts,
+      industryMappings,
+      projects,
+      sourceConfigs,
+      scheduler,
+      {
+        startDate: req.query.startDate as string | undefined,
+        endDate: req.query.endDate as string | undefined,
+        market: req.query.market as string | undefined,
+        projectId: req.query.projectId as string | undefined,
+      },
+    );
+    res.json(summary);
+  });
 
   router.get('/industry-mappings', (req, res) => {
     const type = req.query.type as IndustryType | undefined;

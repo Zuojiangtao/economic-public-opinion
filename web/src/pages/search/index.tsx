@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Card,
   Table,
@@ -88,23 +89,35 @@ const marketColors: Record<string, string> = {
 };
 
 export default function SearchPage() {
+  const [searchParams] = useSearchParams();
+
+  // H009: 支持从 URL query 读取初始筛选参数（如 eventType、sentiment）
+  const initKeyword = searchParams.get('keyword') ?? '';
+  const initSentiment = (searchParams.get('sentiment') as SentimentLabel | null) ?? undefined;
+  const initEventType = searchParams.get('eventType') ?? undefined;
+
   const [params, setParams] = useState<ContentSearchParams>({
     page: 1,
     pageSize: 15,
     sortBy: 'publishedAt',
     sortOrder: 'desc',
+    keyword: initKeyword || undefined,
+    sentiment: initSentiment,
   });
-  const [keyword, setKeyword] = useState('');
+  const [keyword, setKeyword] = useState(initKeyword);
   const [sourceType, setSourceType] = useState<SourceType | undefined>();
-  const [sentiment, setSentiment] = useState<SentimentLabel | undefined>();
+  const [sentiment, setSentiment] = useState<SentimentLabel | undefined>(initSentiment);
   const [riskLevel, setRiskLevel] = useState<RiskLevel | undefined>();
   const [market, setMarket] = useState<MarketType | undefined>();
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
   const [projectId, setProjectId] = useState<string | undefined>();
+  const [eventTypeFilter, setEventTypeFilter] = useState<string | undefined>(initEventType);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<ContentItem | null>(null);
 
-  const { data, isLoading, refetch } = useQuery({
+
+
+  const { data, isLoading } = useQuery({
     queryKey: ['contents', params],
     queryFn: () => contentsApi.search(params),
   });
@@ -137,6 +150,7 @@ export default function SearchPage() {
     setMarket(undefined);
     setDateRange(null);
     setProjectId(undefined);
+    setEventTypeFilter(undefined);
     setParams({ page: 1, pageSize: 15, sortBy: 'publishedAt', sortOrder: 'desc' });
   }
 
@@ -302,6 +316,24 @@ export default function SearchPage() {
             </Space>
           </Col>
         </Row>
+        {/* H009: 从首页跳转来的事件类型过滤标签 */}
+        {eventTypeFilter && (
+          <div style={{ marginTop: 12 }}>
+            <Space>
+              <span style={{ color: '#666', fontSize: 13 }}>当前事件类型筛选：</span>
+              <Tag
+                color="blue"
+                closable
+                onClose={() => {
+                  setEventTypeFilter(undefined);
+                }}
+              >
+                {eventTypeFilter}
+              </Tag>
+              <span style={{ color: '#999', fontSize: 12 }}>（事件类型过滤为前端展示提示，后端检索以关键词为准）</span>
+            </Space>
+          </div>
+        )}
       </Card>
 
       <Card>

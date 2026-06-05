@@ -3,6 +3,7 @@ import { mockContents } from './data/contents';
 import { mockMonitoringProjects } from './data/monitoring';
 import { mockAlerts, mockAlertRules } from './data/alerts';
 import { mockLexicons } from './data/lexicons';
+import { mockDashboardSummary } from './data/dashboard';
 import type {
   ContentItem,
   MonitoringProject,
@@ -20,15 +21,15 @@ import type {
   SourceConfig,
 } from '../api/types';
 
-let contents = [...mockContents];
+const contents = [...mockContents];
 let projects = [...mockMonitoringProjects];
-let alerts = [...mockAlerts];
+const alerts = [...mockAlerts];
 let alertRules = [...mockAlertRules];
 let lexicons = [...mockLexicons];
 let nextId = 1000;
 
 // ---- 数据源配置 Mock 数据（T006） ----
-let sourceConfigs: SourceConfig[] = [
+const sourceConfigs: SourceConfig[] = [
   { id: 'RegulatoryAuthorityCrawler', name: '监管机构公告', sourceName: '监管机构公告', sourceType: 'regulatory', credibilityScore: 98, includeInTemperature: true, authorizationStatus: 'authorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '证监会、交易所等监管机构官方公告，权威性最高', updatedAt: '2026-01-01T00:00:00Z' },
   { id: 'HKEXCrawler', name: '港交所披露易', sourceName: '港交所披露易', sourceType: 'regulatory', credibilityScore: 97, includeInTemperature: true, authorizationStatus: 'authorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '香港交易所官方披露平台', updatedAt: '2026-01-01T00:00:00Z' },
   { id: 'SECCrawler', name: '美国SEC', sourceName: '美股资讯', sourceType: 'regulatory', credibilityScore: 96, includeInTemperature: true, authorizationStatus: 'authorized', antiCrawlRisk: 'low', availabilityStatus: 'available', description: '美国证监会公开披露文件', updatedAt: '2026-01-01T00:00:00Z' },
@@ -698,5 +699,11 @@ export const handlers = [
       updatedAt: new Date().toISOString(),
     };
     return HttpResponse.json(sourceConfigs[idx]);
+  }),
+
+  // H006 Dashboard Summary
+  http.get('/api/v1/dashboard/summary', async () => {
+    await delay(300);
+    return HttpResponse.json(mockDashboardSummary);
   }),
 ];

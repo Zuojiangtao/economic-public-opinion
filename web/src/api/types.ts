@@ -543,3 +543,87 @@ export interface TemperatureListParams {
   market?: MarketType;
   projectId?: string;
 }
+
+// ==================== H006 Dashboard Summary ====================
+
+export interface DashboardIndustryItem {
+  industryId: string;
+  industryName: string;
+  score: number;
+  level: TemperatureLevel;
+}
+
+export interface DashboardRisingItem {
+  industryId: string;
+  industryName: string;
+  scoreDelta: number;
+}
+
+export interface DashboardNegativeItem {
+  industryId: string;
+  industryName: string;
+  negativeRatio: number;
+}
+
+export interface DashboardCrawlerHealth {
+  totalCount: number;
+  availableCount: number;
+  failedCount: number;
+  recentFailures: { name: string; sourceName: string; lastFailedAt: string }[];
+}
+
+export interface DashboardProjectHit {
+  projectId: string;
+  projectName: string;
+  hitCount: number;
+  hasHighRisk: boolean;
+}
+
+export interface DashboardSummaryParams {
+  startDate?: string;
+  endDate?: string;
+  market?: MarketType;
+  projectId?: string;
+}
+
+export interface DashboardSummary {
+  pendingAlertCount: number;
+  highRiskAlertCount: number;
+  hotIndustry?: DashboardIndustryItem;
+  fastestRisingIndustry?: DashboardRisingItem;
+  mostNegativeIndustry?: DashboardNegativeItem;
+  recentHighRiskEventCount: number;
+  temperatureTopList: TemperatureSnapshot[];
+  risingList: TemperatureSnapshot[];
+  fallingList: TemperatureSnapshot[];
+  topAlerts: Alert[];
+  keyContents: ContentItem[];
+  eventDistribution: EventDistribution;
+  crawlerHealth: DashboardCrawlerHealth;
+  monitoringProjectHits: DashboardProjectHit[];
+}
+
+// ==================== Crawler Status ====================
+
+export interface CrawlerStatus {
+  name: string;
+  sourceName: string;
+  enabled: boolean;
+  lastCrawlAt?: string;
+  lastSuccess: boolean;
+  lastError?: string;
+  totalFetched: number;
+  isRunning: boolean;
+  totalAttempts: number;
+  consecutiveFailures: number;
+  circuitOpen: boolean;
+  circuitOpenUntil?: string;
+  healthScore: number;
+  lastItemAt?: string;
+}
+
+export interface CrawlerStatusResponse {
+  crawlers: CrawlerStatus[];
+  storageSize: number;
+}
+
