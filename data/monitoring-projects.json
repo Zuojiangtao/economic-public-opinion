@@ -196,5 +196,141 @@
     "hitCount": 0,
     "createdAt": "2026-01-20T08:00:00Z",
     "updatedAt": "2026-03-19T09:00:00Z"
+  },
+  {
+    "id": "project-1780883906321",
+    "name": "AI科技情绪监测",
+    "status": "active",
+    "targetType": "sector",
+    "targetIds": [
+      "industry-ai",
+      "industry-semiconductor"
+    ],
+    "keywords": {
+      "core": [
+        "AI",
+        "内存",
+        "存储",
+        "GPU",
+        "CPU",
+        "CPO",
+        "光模块",
+        "PCB",
+        "大模型",
+        "Agent",
+        "MLCC"
+      ],
+      "extended": [
+        "科创",
+        "算力",
+        "国产替代"
+      ],
+      "exclude": []
+    },
+    "sourceTypes": [
+      "news",
+      "broker",
+      "forums",
+      "social",
+      "app"
+    ],
+    "sourceWeights": [
+      {
+        "sourceType": "news",
+        "weight": 0.8,
+        "enabled": true
+      },
+      {
+        "sourceType": "broker",
+        "weight": 1,
+        "enabled": true
+      },
+      {
+        "sourceType": "forums",
+        "weight": 0.5,
+        "enabled": true
+      },
+      {
+        "sourceType": "social",
+        "weight": 0.5,
+        "enabled": true
+      },
+      {
+        "sourceType": "app",
+        "weight": 0.2,
+        "enabled": true
+      }
+    ],
+    "temperatureThreshold": 70,
+    "alertThreshold": 80,
+    "outputCycle": "daily",
+    "hitCount": 0,
+    "createdAt": "2026-06-08T01:58:26.321Z",
+    "updatedAt": "2026-06-08T02:01:41.363Z",
+    "description": "ai科技板块的监测方案"
+  },
+  {
+    "id": "project-1780884059341",
+    "name": "有色金属监测",
+    "description": "有色金属板块的舆情监测",
+    "status": "active",
+    "targetType": "sector",
+    "targetIds": [
+      "industry-metals"
+    ],
+    "keywords": {
+      "core": [
+        "有色金属",
+        "小金属",
+        "能源金属",
+        "战略金属",
+        "稀有金属",
+        "铝",
+        "铬",
+        "钨"
+      ],
+      "extended": [],
+      "exclude": []
+    },
+    "sourceTypes": [
+      "news",
+      "broker",
+      "forums",
+      "social",
+      "app"
+    ],
+    "sourceWeights": [
+      {
+        "sourceType": "news",
+        "weight": 0.8,
+        "enabled": true
+      },
+      {
+        "sourceType": "broker",
+        "weight": 1,
+        "enabled": true
+      },
+      {
+        "sourceType": "forums",
+        "weight": 0.5,
+        "enabled": true
+      },
+      {
+        "sourceType": "social",
+        "weight": 0.4,
+        "enabled": true
+      },
+      {
+        "sourceType": "app",
+        "weight": 0.2,
+        "enabled": true
+      }
+    ],
+    "temperatureThreshold": 70,
+    "alertThreshold": 80,
+    "outputCycle": "daily",
+    "hitCount": 0,
+    "createdAt": "2026-06-08T02:00:59.341Z",
+    "updatedAt": "2026-06-08T02:00:59.341Z"
   }
 ]

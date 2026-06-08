@@ -1,4 +1,5 @@
 import type { TemperatureSnapshot } from '../types.js';
+import { getDb } from '../storage/db.js';
 
 /**
  * 内存中的温度快照缓存。
@@ -13,6 +14,52 @@ const dailyCache = new Map<string, TemperatureSnapshot>();
  */
 const HISTORY_LIMIT: Record<'hour' | 'day', number> = { hour: 168, day: 30 };
 const historyMap = new Map<string, TemperatureSnapshot[]>();
+
+// ── SQLite helpers ───────────────────────────────────────────────────────────
+
+interface SnapRow {
+  id: string;
+  industry_id: string;
+  industry_name: string;
+  score: number;
+  level: string;
+  content_count: number;
+  granularity: string;
+  snapshot_at: string;
+  breakdown_json: string;
+  sentiment_dist_json: string;
+}
+
+function rowToSnapshot(row: SnapRow): TemperatureSnapshot {
+  return {
+    id:                    row.id,
+    industryId:            row.industry_id,
+    industryName:          row.industry_name,
+    score:                 row.score,
+    level:                 row.level as TemperatureSnapshot['level'],
+    contentCount:          row.content_count,
+    granularity:           row.granularity as 'hour' | 'day',
+    snapshotAt:            row.snapshot_at,
+    breakdown:             JSON.parse(row.breakdown_json),
+    sentimentDistribution: JSON.parse(row.sentiment_dist_json),
+  };
+}
+
+function persistSnapshot(snap: TemperatureSnapshot): void {
+  const db = getDb();
+  db.prepare(`
+    INSERT OR REPLACE INTO temperature_snapshots
+      (id, industry_id, industry_name, score, level, content_count,
+       granularity, snapshot_at, breakdown_json, sentiment_dist_json)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(
+    snap.id, snap.industryId, snap.industryName, snap.score, snap.level,
+    snap.contentCount, snap.granularity, snap.snapshotAt,
+    JSON.stringify(snap.breakdown), JSON.stringify(snap.sentimentDistribution),
+  );
+}
+
+// ── Public API ───────────────────────────────────────────────────────────────
 
 export function updateSnapshots(snapshots: TemperatureSnapshot[]): void {
   for (const snap of snapshots) {
@@ -38,10 +85,12 @@ export function getSnapshotByIndustry(
 }
 
 /**
- * 将快照推入历史记录，按 snapshotAt 去重（同一时间桶更新而非追加）。
+ * 将快照推入历史记录，按 snapshotAt 去重（同一时间桶更新而非追加），并持久化到 SQLite。
  */
 export function pushToHistory(snapshots: TemperatureSnapshot[]): void {
   for (const snap of snapshots) {
+    persistSnapshot(snap);
+
     const key = `${snap.industryId}-${snap.granularity}`;
     const arr = historyMap.get(key) ?? [];
     const existingIdx = arr.findIndex((s) => s.snapshotAt === snap.snapshotAt);
@@ -58,6 +107,7 @@ export function pushToHistory(snapshots: TemperatureSnapshot[]): void {
 
 /**
  * 获取指定行业的历史温度列表，按时间升序排列。
+ * 优先从内存缓存读取；若内存为空则从 SQLite 加载。
  */
 export function getHistory(
   industryId: string,
@@ -67,9 +117,24 @@ export function getHistory(
   endDate?: string,
 ): TemperatureSnapshot[] {
   const key = `${industryId}-${granularity}`;
-  let arr = historyMap.get(key) ?? [];
+  let arr = historyMap.get(key);
+
+  if (!arr || arr.length === 0) {
+    // Load from SQLite
+    const db = getDb();
+    const conditions = ['industry_id = ?', 'granularity = ?'];
+    const params: unknown[] = [industryId, granularity];
+    if (startDate) { conditions.push('snapshot_at >= ?'); params.push(startDate); }
+    if (endDate)   { conditions.push('snapshot_at <= ?'); params.push(endDate); }
+    const rows = db.prepare(
+      `SELECT * FROM temperature_snapshots WHERE ${conditions.join(' AND ')} ORDER BY snapshot_at ASC LIMIT ?`,
+    ).all(...params as [], limit) as SnapRow[];
+    arr = rows.map(rowToSnapshot);
+    historyMap.set(key, arr);
+    return arr;
+  }
+
   if (startDate) arr = arr.filter((s) => s.snapshotAt >= startDate);
-  if (endDate) arr = arr.filter((s) => s.snapshotAt <= endDate);
-  // 返回最新 limit 条，保持时间升序
+  if (endDate)   arr = arr.filter((s) => s.snapshotAt <= endDate);
   return arr.slice(-limit);
 }

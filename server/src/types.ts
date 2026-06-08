@@ -364,6 +364,8 @@ export interface TemperatureSnapshot {
   snapshotAt: string;
   /** 时间粒度 */
   granularity: 'hour' | 'day';
+  /** 与上一个快照的温度差（可选，由 dashboard 计算填充） */
+  scoreDelta?: number;
 }
 
 /** 风险内容分布 */

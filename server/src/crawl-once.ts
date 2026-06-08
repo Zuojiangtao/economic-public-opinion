@@ -25,9 +25,8 @@ async function main() {
     totalNew += r.count;
   }
 
-  storage.save();
   console.log(`\n新增 ${totalNew} 条，总存储 ${storage.getSize()} 条`);
-  console.log('数据已保存到 server/data/contents.json');
+  console.log('数据已写入 SQLite (data/sentiment.db)');
 
   storage.destroy();
 }

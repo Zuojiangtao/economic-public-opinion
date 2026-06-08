@@ -1,10 +1,7 @@
-import fs from 'fs';
-import path from 'path';
-import { DATA_DIR } from '../config.js';
+// T008: migrated to SQLite
+import { getDb } from './db.js';
 
-const FILE = path.join(DATA_DIR, 'lexicons.json');
-
-/** 与 data/lexicons.json 初始内容一致，仅在文件缺失或损坏时用于种子写入 */
+/** 与 data/lexicons.json 初始内容一致，仅在数据库为空时种子写入 */
 const DEFAULT_LEXICONS: unknown[] = [
   { id: 'lex-001', word: '比亚迪', category: 'brand', synonyms: ['BYD'], createdAt: '2026-01-01T00:00:00Z' },
   { id: 'lex-002', word: '宁德时代', category: 'brand', synonyms: ['CATL'], createdAt: '2026-01-01T00:00:00Z' },
@@ -23,29 +20,31 @@ const DEFAULT_LEXICONS: unknown[] = [
   { id: 'lex-015', word: '招聘', category: 'stop', synonyms: ['求职', '应聘'], createdAt: '2026-01-01T00:00:00Z' },
 ];
 
-export function loadLexicons(): any[] {
-  try {
-    if (fs.existsSync(FILE)) {
-      const raw = fs.readFileSync(FILE, 'utf-8');
-      const arr = JSON.parse(raw) as unknown;
-      if (Array.isArray(arr)) {
-        console.log(`[Lexicons] Loaded ${arr.length} entries from ${FILE}`);
-        return arr as any[];
-      }
-    }
-  } catch (err) {
-    console.error('[Lexicons] Load failed, using defaults:', err);
+export function loadLexicons(): unknown[] {
+  const db = getDb();
+  const rows = db.prepare('SELECT data_json FROM lexicons').all() as { data_json: string }[];
+  if (rows.length > 0) {
+    const result = rows.map((r) => JSON.parse(r.data_json));
+    console.log(`[Lexicons] Loaded ${result.length} entries from SQLite`);
+    return result;
   }
-  const copy = JSON.parse(JSON.stringify(DEFAULT_LEXICONS)) as any[];
-  saveLexicons(copy);
-  console.log(`[Lexicons] Seeded defaults to ${FILE}`);
+  const copy = JSON.parse(JSON.stringify(DEFAULT_LEXICONS)) as Array<{ id: string }>;
+  const stmt = db.prepare('INSERT OR IGNORE INTO lexicons (id, data_json) VALUES (?, ?)');
+  const seed = db.transaction(() => {
+    for (const item of copy) stmt.run(item.id, JSON.stringify(item));
+  });
+  seed();
+  console.log(`[Lexicons] Seeded ${copy.length} defaults to SQLite`);
   return copy;
 }
 
-export function saveLexicons(lexicons: any[]): void {
-  const dir = path.dirname(FILE);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-  fs.writeFileSync(FILE, JSON.stringify(lexicons, null, 2), 'utf-8');
+export function saveLexicons(lexicons: unknown[]): void {
+  const db = getDb();
+  const upsert = db.prepare('INSERT OR REPLACE INTO lexicons (id, data_json) VALUES (?, ?)');
+  const save = db.transaction(() => {
+    for (const item of lexicons as Array<{ id: string }>) {
+      upsert.run(item.id, JSON.stringify(item));
+    }
+  });
+  save();
 }

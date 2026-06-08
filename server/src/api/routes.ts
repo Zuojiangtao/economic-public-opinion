@@ -11,6 +11,13 @@ import {
 } from '../storage/industryMappingsStore.js';
 import { loadSourceConfigs, saveSourceConfigs } from '../storage/sourceConfigsStore.js';
 import {
+  loadAlertsMap,
+  saveAlert,
+  loadAlertRules,
+  saveAlertRule,
+  deleteAlertRule,
+} from '../storage/alertsStore.js';
+import {
   queryIndustriesByKeywords,
   queryIndustriesByText,
 } from '../nlp/industryMappingService.js';
@@ -352,21 +359,23 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     res.status(204).end();
   });
 
-  // ==================== Alerts (in-memory) ====================
+  // ==================== Alerts (SQLite-backed) ====================
 
-  const alerts = new Map<string, Alert>();
+  const alerts = loadAlertsMap();
   initDefaultAlerts(alerts);
 
   // 注入告警回调到调度器，让爬虫熔断时可自动生成告警（T009）
   scheduler.setAlertCallback((alertData) => {
     if (!alerts.has(alertData.id)) {
-      alerts.set(alertData.id, {
+      const a = {
         ...alertData,
-        status: 'pending',
+        status: 'pending' as const,
         ruleName: '爬虫熔断预警',
         relatedContentIds: [],
         handleRecords: [],
-      });
+      };
+      alerts.set(a.id, a);
+      saveAlert(a);
       console.log(`[AlertCallback] Auto-alert created: ${alertData.title}`);
     }
   });
@@ -421,69 +430,13 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       note: req.body.note || '',
       timestamp: new Date().toISOString(),
     });
+    saveAlert(a);
     res.json(a);
   });
 
-  // ==================== Alert Rules (in-memory, T010 升级版) ====================
+  // ==================== Alert Rules (SQLite-backed, T010 升级版) ====================
 
-  const alertRules: AlertRule[] = [
-    {
-      id: 'rule-001',
-      name: '负面声量突增预警',
-      description: '当负面内容数量在2小时内增长超过100%时触发',
-      enabled: true,
-      conditions: { negativeVolumeRiseAbove: 100, sourceTypes: ['news', 'forums', 'social'], windowMinutes: 120 },
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-    {
-      id: 'rule-002',
-      name: '情绪阈值预警',
-      description: '当监测内容平均情绪指数低于设定阈值时触发',
-      enabled: true,
-      conditions: { sentimentBelow: -0.5, windowMinutes: 120 },
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-    {
-      id: 'rule-003',
-      name: '高风险内容预警',
-      description: '当出现高风险或极高风险级别内容时立即触发',
-      enabled: true,
-      conditions: { riskLevelAbove: 'high', windowMinutes: 60 },
-      createdAt: '2026-01-01T00:00:00Z',
-    },
-    {
-      id: 'rule-004',
-      name: '风险词命中预警',
-      description: '当内容命中风险词库中的关键词时触发',
-      enabled: true,
-      conditions: { keywords: ['暴雷', '违约', '跑路', '崩盘', '做空', '债务危机'], windowMinutes: 120 },
-      createdAt: '2026-02-01T00:00:00Z',
-    },
-    {
-      id: 'rule-005',
-      name: '行业温度过热预警',
-      description: '当某行业温度指数超过80分时触发过热预警',
-      enabled: true,
-      conditions: { temperatureAbove: 80, windowMinutes: 60 },
-      createdAt: '2026-03-01T00:00:00Z',
-    },
-    {
-      id: 'rule-006',
-      name: '行业温度快速升温预警',
-      description: '当某行业温度指数在相邻两个快照之间上升超过15分时触发',
-      enabled: true,
-      conditions: { temperatureRiseAbove: 15, windowMinutes: 60 },
-      createdAt: '2026-03-01T00:00:00Z',
-    },
-    {
-      id: 'rule-007',
-      name: '研报观点集中转向预警',
-      description: '当近2小时内研报负面观点占比超过50%时触发',
-      enabled: true,
-      conditions: { brokerNegativeRatioAbove: 0.5, windowMinutes: 120 },
-      createdAt: '2026-03-01T00:00:00Z',
-    },
-  ];
+  const alertRules = loadAlertRules();
 
   router.get('/alert-rules', (_req, res) => {
     res.json(alertRules);
@@ -499,6 +452,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       createdAt: new Date().toISOString(),
     };
     alertRules.push(rule);
+    saveAlertRule(rule);
     res.status(201).json(rule);
   });
 
@@ -516,6 +470,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       updatedAt: new Date().toISOString(),
     };
     alertRules[idx] = updated;
+    saveAlertRule(updated);
     res.json(updated);
   });
 
@@ -525,6 +480,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       res.status(404).json({ code: 'NOT_FOUND', message: '规则不存在' });
       return;
     }
+    deleteAlertRule(alertRules[idx].id);
     alertRules.splice(idx, 1);
     res.status(204).end();
   });
@@ -541,6 +497,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       enabled: req.body.enabled ?? !alertRules[idx].enabled,
       updatedAt: new Date().toISOString(),
     };
+    saveAlertRule(alertRules[idx]);
     res.json(alertRules[idx]);
   });
 
@@ -554,12 +511,13 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     res.json({ triggered: newAlerts.length, alerts: newAlerts });
   });
 
-  /** 执行预警评估，将新预警写入 alerts Map，返回新增预警 */
+  /** 执行预警评估，将新预警写入 alerts Map 和 SQLite，返回新增预警 */
   function runAlertEvaluation(): Alert[] {
     const allItems = storage.getAll();
     const newAlerts = evaluateAlertRules(alertRules, allItems);
     for (const a of newAlerts) {
       alerts.set(a.id, a);
+      saveAlert(a);
       console.log(`[AlertEval] Triggered: [${a.riskLevel}] ${a.title}`);
     }
     return newAlerts;
@@ -687,7 +645,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
 
   // ==================== Lexicons（数据见根目录 data/lexicons.json） ====================
 
-  const lexicons = loadLexicons();
+  const lexicons = loadLexicons() as Array<Record<string, unknown> & { id: string; category?: string }>;
 
   router.get('/lexicons', (req, res) => {
     const category = req.query.category as string | undefined;
@@ -1017,13 +975,11 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
 
   router.post('/crawlers/run-all', async (_req, res) => {
     const results = await scheduler.runAllEnabled();
-    storage.save();
     res.json({ results, storageSize: storage.getSize() });
   });
 
   router.post('/crawlers/:name/run', async (req, res) => {
     const result = await scheduler.runSingle(req.params.name);
-    storage.save();
     res.json({ ...result, storageSize: storage.getSize() });
   });
 
@@ -1042,6 +998,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
 }
 
 function initDefaultAlerts(alerts: Map<string, Alert>) {
+  if (alerts.size > 0) return; // DB already has alerts
   const defaults: Alert[] = [
     {
       id: 'alert-001', title: '负面舆情激增预警', description: '过去2小时内负面内容激增',
@@ -1055,5 +1012,8 @@ function initDefaultAlerts(alerts: Map<string, Alert>) {
       handleRecords: [{ handler: '管理员', action: 'start_processing', note: '调查中', timestamp: new Date().toISOString() }],
     },
   ];
-  for (const a of defaults) alerts.set(a.id, a);
+  for (const a of defaults) {
+    alerts.set(a.id, a);
+    saveAlert(a);
+  }
 }
