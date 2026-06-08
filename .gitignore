@@ -38,5 +38,8 @@ dist-ssr
 /server/node_modules
 /server/pnpm-lock.yaml
 
-# data
-/data/contents.json
+# data — 运行时数据，不跟踪
+/data/*.json
+/data/*.db
+/data/*.db-shm
+/data/*.db-wal
