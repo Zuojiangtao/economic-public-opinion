@@ -15,6 +15,7 @@ export interface DashboardParams {
 }
 
 type MonitoringProjectLike = {
+  name?: string;
   targetIds?: string[];
   keywords?: {
     core?: string[];
@@ -265,21 +266,35 @@ export function buildDashboardSummary(
     string,
     { name: string; hitCount: number; hasHighRisk: boolean }
   >();
-  for (const item of allItems) {
-    for (const match of item.matches ?? []) {
-      if (!projectHitMap.has(match.projectId)) {
-        projectHitMap.set(match.projectId, {
-          name: match.projectName,
-          hitCount: 0,
-          hasHighRisk: false,
-        });
-      }
-      const entry = projectHitMap.get(match.projectId)!;
-      entry.hitCount += 1;
-      if (item.nlp.riskLevel === 'high' || item.nlp.riskLevel === 'critical') {
-        entry.hasHighRisk = true;
-      }
-    }
+
+  /** 判断内容是否匹配某监测方案的关键词规则 */
+  function itemMatchesProject(item: ContentItem, p: MonitoringProjectLike): boolean {
+    const include = [
+      ...(p.keywords?.core ?? p.keywords?.include ?? []),
+      ...(p.keywords?.extended ?? []),
+    ].map((k: string) => k.toLowerCase());
+    const exclude = (p.keywords?.exclude ?? []).map((k: string) => k.toLowerCase());
+    // 优先使用预填充的 matches
+    if (item.matches?.some((m) => m.projectId !== undefined)) return true;
+    if (include.length === 0) return false;
+    const text = (item.title + ' ' + (item.content ?? '')).toLowerCase();
+    return include.some((k) => text.includes(k)) && !exclude.some((k) => text.includes(k));
+  }
+
+  for (const [pid, p] of projects) {
+    const matchedItems = allItems.filter((item) => {
+      // 优先检查预填充 matches
+      if (item.matches?.some((m) => m.projectId === pid)) return true;
+      return itemMatchesProject(item, p);
+    });
+    if (matchedItems.length === 0) continue;
+    projectHitMap.set(pid, {
+      name: (p as { name?: string }).name ?? pid,
+      hitCount: matchedItems.length,
+      hasHighRisk: matchedItems.some(
+        (i) => i.nlp.riskLevel === 'high' || i.nlp.riskLevel === 'critical',
+      ),
+    });
   }
   const monitoringProjectHits = Array.from(projectHitMap.entries())
     .map(([pid, data]) => ({
