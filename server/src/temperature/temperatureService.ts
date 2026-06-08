@@ -206,7 +206,13 @@ export function computeTemperatureSnapshots(
   granularity: 'hour' | 'day' = 'hour',
   sourceConfigs?: SourceConfig[],
 ): TemperatureSnapshot[] {
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  // 时间桶：小时级取整到小时，日级取整到天，保证同一时间桶内 ID 不变
+  const bucket = granularity === 'hour'
+    ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
   // 构建来源查找索引（T006 动态权重）
   const sourceConfigMap = sourceConfigs ? buildSourceConfigMap(sourceConfigs) : undefined;
@@ -247,7 +253,7 @@ export function computeTemperatureSnapshots(
     for (const { item } of wi) dist[item.nlp.sentimentLabel]++;
 
     return {
-      id: `temp-${industry.id}-${granularity}`,
+      id: `temp-${industry.id}-${granularity}-${bucket}`,
       industryId: industry.id,
       industryName: industry.name,
       score,
@@ -255,7 +261,7 @@ export function computeTemperatureSnapshots(
       breakdown,
       contentCount: count,
       sentimentDistribution: dist,
-      snapshotAt: now,
+      snapshotAt: nowIso,
       granularity,
     } satisfies TemperatureSnapshot;
   });
@@ -271,7 +277,14 @@ export function computeTemperatureDetail(
   topN = 5,
   sourceConfigs?: SourceConfig[],
 ): TemperatureDetail {
-  const now = new Date().toISOString();
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  // 时间桶：与 computeTemperatureSnapshots 保持一致
+  const bucket = granularity === 'hour'
+    ? `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}`
+    : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
   // T013：使用相关度加权的内容集
   const wi = getWeightedItems(industry, allItems);
   const items = wi.map((w) => w.item);
@@ -336,7 +349,7 @@ export function computeTemperatureDetail(
   }));
 
   return {
-    id: `temp-${industry.id}-${granularity}`,
+    id: `temp-${industry.id}-${granularity}-${bucket}`,
     industryId: industry.id,
     industryName: industry.name,
     score,
@@ -344,7 +357,7 @@ export function computeTemperatureDetail(
     breakdown,
     contentCount: count,
     sentimentDistribution,
-    snapshotAt: now,
+    snapshotAt: nowIso,
     granularity,
     riskDistribution,
     topContents,

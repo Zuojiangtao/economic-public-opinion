@@ -39,7 +39,13 @@ export function buildDashboardSummary(
   // 内容过滤
   // ============================================================
   let allItems: ContentItem[] = storage.getAll();
-  if (startDate) allItems = allItems.filter((i) => i.publishedAt >= startDate);
+  // 默认时间窗口：最近 7 天（与小时级温度计算窗口一致）
+  const defaultCutoff = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  if (!startDate || startDate < defaultCutoff) {
+    allItems = allItems.filter((i) => i.publishedAt >= defaultCutoff);
+  } else {
+    allItems = allItems.filter((i) => i.publishedAt >= startDate);
+  }
   if (endDate)   allItems = allItems.filter((i) => i.publishedAt <= endDate);
   if (market)    allItems = allItems.filter((i) => i.market === market);
   if (projectId) {
@@ -103,6 +109,42 @@ export function buildDashboardSummary(
     'hour',
     sourceConfigs,
   );
+
+  // 填充 scoreDelta：对比前一窗口（7-14天前）的内容
+  const prevCutoffStart = new Date(Date.now() - 14 * 86_400_000).toISOString();
+  const prevCutoffEnd = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  let prevItems: ContentItem[] = storage.getAll().filter(
+    (i) => i.publishedAt >= prevCutoffStart && i.publishedAt < prevCutoffEnd,
+  );
+  if (market) prevItems = prevItems.filter((i) => i.market === market);
+  if (projectId) {
+    const p = projects.get(projectId);
+    if (p) {
+      const include = [
+        ...(p.keywords?.core ?? p.keywords?.include ?? []),
+        ...(p.keywords?.extended ?? []),
+      ].map((k: string) => k.toLowerCase());
+      const exclude = (p.keywords?.exclude ?? []).map((k: string) => k.toLowerCase());
+      prevItems = prevItems.filter((i) => {
+        if (i.matches?.some((m) => m.projectId === projectId)) return true;
+        const text = (i.title + ' ' + (i.content ?? '')).toLowerCase();
+        return include.some((k) => text.includes(k)) && !exclude.some((k) => text.includes(k));
+      });
+    }
+  }
+
+  if (prevItems.length > 0) {
+    const prevSnapshots = computeTemperatureSnapshots(industries, prevItems, 'hour', sourceConfigs);
+    const prevScoreMap = new Map(prevSnapshots.map((s) => [s.industryId, s.score]));
+    for (const snap of snapshots) {
+      const prevScore = prevScoreMap.get(snap.industryId);
+      snap.scoreDelta = prevScore !== undefined ? snap.score - prevScore : 0;
+    }
+  } else {
+    for (const snap of snapshots) {
+      snap.scoreDelta = 0;
+    }
+  }
 
   const sortedByScore = [...snapshots].sort((a, b) => b.score - a.score);
   const temperatureTopList = sortedByScore.slice(0, 5);

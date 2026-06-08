@@ -28,6 +28,7 @@ import {
   getSnapshotsByGranularity,
   pushToHistory,
   getHistory,
+  getPreviousSnapshot,
 } from '../temperature/temperatureStore.js';
 import { listClusters, getClusterById } from '../dedup/eventClusterStore.js';
 import { queryCrawlLogs } from '../storage/crawlLogsStore.js';
@@ -791,6 +792,9 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
   /**
    * 计算并刷新温度快照的辅助函数。
    * 每次请求时按需重新计算（MVP 阶段不做缓存过期，直接实时算）。
+   * 只取最近 N 天的内容参与计算。
+   * scoreDelta 通过对比当前窗口 vs 前一窗口的内容计算得出，
+   * 不依赖历史快照，确保即使首次请求也有变化值。
    */
   function refreshTemperatures(
     granularity: 'hour' | 'day' = 'hour',
@@ -798,8 +802,38 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
   ) {
     let industries = Array.from(industryMappings.values());
     if (industryFilter) industries = industries.filter(industryFilter);
-    const allItems = storage.getAll();
-    const snapshots = computeTemperatureSnapshots(industries, allItems, granularity, sourceConfigs);
+
+    // 时间窗口过滤：小时级取最近 7 天，日级取最近 30 天
+    const windowDays = granularity === 'hour' ? 7 : 30;
+    const now = Date.now();
+    const cutoff = new Date(now - windowDays * 86_400_000).toISOString();
+    const currentItems = storage.getAll().filter((item) => item.publishedAt >= cutoff);
+
+    const snapshots = computeTemperatureSnapshots(industries, currentItems, granularity, sourceConfigs);
+
+    // 计算前一窗口的快照，用于 scoreDelta
+    // 前一窗口 = [2*windowDays 前, windowDays 前)
+    const prevCutoffStart = new Date(now - 2 * windowDays * 86_400_000).toISOString();
+    const prevCutoffEnd = cutoff;
+    const prevItems = storage.getAll().filter(
+      (item) => item.publishedAt >= prevCutoffStart && item.publishedAt < prevCutoffEnd,
+    );
+
+    if (prevItems.length > 0) {
+      const prevSnapshots = computeTemperatureSnapshots(industries, prevItems, granularity, sourceConfigs);
+      const prevScoreMap = new Map(prevSnapshots.map((s) => [s.industryId, s.score]));
+      for (const snap of snapshots) {
+        const prevScore = prevScoreMap.get(snap.industryId);
+        snap.scoreDelta = prevScore !== undefined ? snap.score - prevScore : 0;
+      }
+    } else {
+      // 没有前一窗口数据时，尝试从历史快照取
+      for (const snap of snapshots) {
+        const prev = getPreviousSnapshot(snap.industryId, granularity, snap.snapshotAt);
+        snap.scoreDelta = prev ? snap.score - prev.score : 0;
+      }
+    }
+
     updateSnapshots(snapshots);
     pushToHistory(snapshots);
     return snapshots;
@@ -864,8 +898,26 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       res.status(404).json({ code: 'NOT_FOUND', message: '行业不存在' });
       return;
     }
-    const allItems = storage.getAll();
-    const detail = computeTemperatureDetail(industry, allItems, granularity, 5, sourceConfigs);
+
+    const windowDays = granularity === 'hour' ? 7 : 30;
+    const now = Date.now();
+    const cutoff = new Date(now - windowDays * 86_400_000).toISOString();
+    const currentItems = storage.getAll().filter((item) => item.publishedAt >= cutoff);
+
+    const detail = computeTemperatureDetail(industry, currentItems, granularity, 5, sourceConfigs);
+
+    // 填充 scoreDelta：计算前一窗口的分数进行对比
+    const prevCutoffStart = new Date(now - 2 * windowDays * 86_400_000).toISOString();
+    const prevItems = storage.getAll().filter(
+      (item) => item.publishedAt >= prevCutoffStart && item.publishedAt < cutoff,
+    );
+    if (prevItems.length > 0) {
+      const prevDetail = computeTemperatureDetail(industry, prevItems, granularity, 0, sourceConfigs);
+      detail.scoreDelta = detail.score - prevDetail.score;
+    } else {
+      detail.scoreDelta = 0;
+    }
+
     // 同步更新快照缓存和历史
     updateSnapshots([detail]);
     pushToHistory([detail]);
@@ -896,7 +948,9 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     const history = getHistory(industryId, granularity, limit, startDate, endDate);
     if (history.length === 0) {
       const industry = industryMappings.get(industryId)!;
-      const allItems = storage.getAll();
+      const windowDays = granularity === 'hour' ? 7 : 30;
+      const cutoff = new Date(Date.now() - windowDays * 86_400_000).toISOString();
+      const allItems = storage.getAll().filter((item) => item.publishedAt >= cutoff);
       const detail = computeTemperatureDetail(industry, allItems, granularity);
       updateSnapshots([detail]);
       pushToHistory([detail]);

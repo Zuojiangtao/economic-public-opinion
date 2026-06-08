@@ -48,7 +48,7 @@ function rowToSnapshot(row: SnapRow): TemperatureSnapshot {
 function persistSnapshot(snap: TemperatureSnapshot): void {
   const db = getDb();
   db.prepare(`
-    INSERT OR REPLACE INTO temperature_snapshots
+    INSERT OR IGNORE INTO temperature_snapshots
       (id, industry_id, industry_name, score, level, content_count,
        granularity, snapshot_at, breakdown_json, sentiment_dist_json)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -106,7 +106,7 @@ export function pushToHistory(snapshots: TemperatureSnapshot[]): void {
 }
 
 /**
- * 获取指定行业的历史温度列表，按时间升序排列。
+ * 获取指定行业的历史温度列表，按时间升序排列（返回最近 limit 条）。
  * 优先从内存缓存读取；若内存为空则从 SQLite 加载。
  */
 export function getHistory(
@@ -120,16 +120,16 @@ export function getHistory(
   let arr = historyMap.get(key);
 
   if (!arr || arr.length === 0) {
-    // Load from SQLite
+    // Load from SQLite：先按时间倒序取最新 limit 条，再反转为升序
     const db = getDb();
     const conditions = ['industry_id = ?', 'granularity = ?'];
     const params: unknown[] = [industryId, granularity];
     if (startDate) { conditions.push('snapshot_at >= ?'); params.push(startDate); }
     if (endDate)   { conditions.push('snapshot_at <= ?'); params.push(endDate); }
     const rows = db.prepare(
-      `SELECT * FROM temperature_snapshots WHERE ${conditions.join(' AND ')} ORDER BY snapshot_at ASC LIMIT ?`,
+      `SELECT * FROM temperature_snapshots WHERE ${conditions.join(' AND ')} ORDER BY snapshot_at DESC LIMIT ?`,
     ).all(...params as [], limit) as SnapRow[];
-    arr = rows.map(rowToSnapshot);
+    arr = rows.map(rowToSnapshot).reverse();
     historyMap.set(key, arr);
     return arr;
   }
@@ -137,4 +137,30 @@ export function getHistory(
   if (startDate) arr = arr.filter((s) => s.snapshotAt >= startDate);
   if (endDate)   arr = arr.filter((s) => s.snapshotAt <= endDate);
   return arr.slice(-limit);
+}
+
+/**
+ * 获取指定行业最近一个历史快照（用于计算 scoreDelta）。
+ * 排除与 beforeTime 相同的快照，确保取到的是"上一个"时间桶。
+ */
+export function getPreviousSnapshot(
+  industryId: string,
+  granularity: 'hour' | 'day',
+  beforeTime: string,
+): TemperatureSnapshot | undefined {
+  // 优先从内存取
+  const key = `${industryId}-${granularity}`;
+  const arr = historyMap.get(key);
+  if (arr && arr.length > 0) {
+    // 找 snapshotAt < beforeTime 的最后一条
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i].snapshotAt < beforeTime) return arr[i];
+    }
+  }
+  // 回退到 SQLite
+  const db = getDb();
+  const row = db.prepare(
+    `SELECT * FROM temperature_snapshots WHERE industry_id = ? AND granularity = ? AND snapshot_at < ? ORDER BY snapshot_at DESC LIMIT 1`,
+  ).get(industryId, granularity, beforeTime) as SnapRow | undefined;
+  return row ? rowToSnapshot(row) : undefined;
 }
