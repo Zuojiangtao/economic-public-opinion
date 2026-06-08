@@ -39,7 +39,6 @@ dist-ssr
 /server/pnpm-lock.yaml
 
 # data — 运行时数据，不跟踪
-/data/*.json
 /data/*.db
 /data/*.db-shm
 /data/*.db-wal
