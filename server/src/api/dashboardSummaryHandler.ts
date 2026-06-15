@@ -42,11 +42,8 @@ export function buildDashboardSummary(
   let allItems: ContentItem[] = storage.getAll();
   // 默认时间窗口：最近 7 天（与小时级温度计算窗口一致）
   const defaultCutoff = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  if (!startDate || startDate < defaultCutoff) {
-    allItems = allItems.filter((i) => i.publishedAt >= defaultCutoff);
-  } else {
-    allItems = allItems.filter((i) => i.publishedAt >= startDate);
-  }
+  const cutoff = startDate ?? defaultCutoff;
+  allItems = allItems.filter((i) => i.publishedAt >= cutoff);
   if (endDate)   allItems = allItems.filter((i) => i.publishedAt <= endDate);
   if (market)    allItems = allItems.filter((i) => i.market === market);
   if (projectId) {
@@ -108,11 +105,7 @@ export function buildDashboardSummary(
   }
 
   // 温度计算：与 /temperatures?granularity=hour 使用相同的时间窗口逻辑
-  // 默认 7 天；若有 startDate 则取 max(startDate, 7天前)
-  const tempWindowDays = 7;
-  const tempNow = Date.now();
-  const tempDefaultCutoff = new Date(tempNow - tempWindowDays * 86_400_000).toISOString();
-  const tempCutoff = (!startDate || startDate < tempDefaultCutoff) ? tempDefaultCutoff : startDate;
+  const tempCutoff = startDate ?? new Date(Date.now() - 7 * 86_400_000).toISOString();
 
   let tempItems = storage.getAll().filter((item) => item.publishedAt >= tempCutoff);
   if (endDate) tempItems = tempItems.filter((item) => item.publishedAt <= endDate);
@@ -128,7 +121,7 @@ export function buildDashboardSummary(
   // 前一窗口时长 = 当前窗口时长，紧邻当前窗口之前
   const currentWindowMs = endDate && startDate
     ? new Date(endDate).getTime() - new Date(startDate).getTime()
-    : tempWindowDays * 86_400_000;
+    : 7 * 86_400_000;
   const prevCutoffEnd = tempCutoff;
   const prevCutoffStart = new Date(new Date(prevCutoffEnd).getTime() - currentWindowMs).toISOString();
   const prevItems = storage.getAll().filter(

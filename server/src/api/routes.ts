@@ -25,7 +25,6 @@ import { scoreRelevance, scoreRelevanceForIndustries } from '../nlp/relevanceSer
 import { computeTemperatureSnapshots, computeTemperatureDetail } from '../temperature/temperatureService.js';
 import {
   updateSnapshots,
-  getSnapshotsByGranularity,
   pushToHistory,
   getHistory,
   getPreviousSnapshot,
@@ -809,7 +808,8 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     const windowDays = granularity === 'hour' ? 7 : 30;
     const now = Date.now();
     const defaultCutoff = new Date(now - windowDays * 86_400_000).toISOString();
-    const cutoff = (!startDate || startDate < defaultCutoff) ? defaultCutoff : startDate;
+    // 前端明确传了 startDate 时尊重前端时间窗口，不再强制最低窗口
+    const cutoff = startDate ?? defaultCutoff;
 
     let currentItems = storage.getAll().filter((item) => item.publishedAt >= cutoff);
     if (endDate) currentItems = currentItems.filter((item) => item.publishedAt <= endDate);
@@ -821,11 +821,9 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     const currentWindowMs = endDate && startDate
       ? new Date(endDate).getTime() - new Date(startDate).getTime()
       : windowDays * 86_400_000;
-    const currentWindowEnd = endDate ? new Date(endDate).getTime() : now;
-    const prevCutoffEnd = cutoff;
-    const prevCutoffStart = new Date(new Date(prevCutoffEnd).getTime() - currentWindowMs).toISOString();
+    const prevCutoffStart = new Date(new Date(cutoff).getTime() - currentWindowMs).toISOString();
     const prevItems = storage.getAll().filter(
-      (item) => item.publishedAt >= prevCutoffStart && item.publishedAt < prevCutoffEnd,
+      (item) => item.publishedAt >= prevCutoffStart && item.publishedAt < cutoff,
     );
 
     if (prevItems.length > 0) {
@@ -881,16 +879,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       return true;
     };
 
-    refreshTemperatures(granularity, industryFilter as Parameters<typeof refreshTemperatures>[1], startDate, endDate);
-    const snapshots = getSnapshotsByGranularity(granularity).filter((s) => {
-      if (type) {
-        const m = industryMappings.get(s.industryId);
-        if (!m || m.type !== type) return false;
-      }
-      if (targetIds && !targetIds.has(s.industryId)) return false;
-      // market 过滤已在 industryFilter 中处理，此处不重复
-      return true;
-    });
+    const snapshots = refreshTemperatures(granularity, industryFilter as Parameters<typeof refreshTemperatures>[1], startDate, endDate);
 
     res.json({
       items: snapshots,

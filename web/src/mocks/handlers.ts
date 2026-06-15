@@ -544,8 +544,17 @@ export const handlers = [
     await delay(200);
     const url = new URL(request.url);
     const granularity = (url.searchParams.get('granularity') || 'hour') as 'hour' | 'day';
+    const startDateStr = url.searchParams.get('startDate');
+    const endDateStr = url.searchParams.get('endDate');
 
-    const mockIndustries: { id: string; name: string; score: number; delta: number; level: TemperatureLevel; bd: [number, number, number, number]; cnt: number; pos: number; neu: number; neg: number }[] = [
+    // 根据时间窗口调整 mock 数据：窗口越短，声量和内容数越少，温度变化越大
+    const startMs = startDateStr ? new Date(startDateStr).getTime() : Date.now() - 7 * 86_400_000;
+    const endMs = endDateStr ? new Date(endDateStr).getTime() : Date.now();
+    const windowHours = Math.max(1, (endMs - startMs) / 3_600_000);
+    // 以 7 天（168 小时）为基准，按比例缩放声量和内容数
+    const scale = Math.min(1, windowHours / 168);
+
+    const baseIndustries: { id: string; name: string; score: number; delta: number; level: TemperatureLevel; bd: [number, number, number, number]; cnt: number; pos: number; neu: number; neg: number }[] = [
       { id: 'industry-ai',           name: 'AI科技',   score: 82, delta: +12, level: 'hot',     bd: [88, 75, 72, 95], cnt: 124, pos: 80, neu: 30, neg: 14 },
       { id: 'industry-semiconductor',name: '半导体',   score: 74, delta:  +7, level: 'warm',    bd: [72, 68, 65, 90], cnt: 98,  pos: 55, neu: 28, neg: 15 },
       { id: 'industry-new-energy',   name: '新能源',   score: 61, delta:  +3, level: 'neutral', bd: [65, 55, 58, 75], cnt: 76,  pos: 38, neu: 25, neg: 13 },
@@ -554,6 +563,16 @@ export const handlers = [
       { id: 'industry-bank',         name: '银行',     score: 38, delta:  -8, level: 'cool',    bd: [35, 40, 30, 70], cnt: 38,  pos: 14, neu: 15, neg: 9  },
       { id: 'industry-realestate',   name: '房地产',   score: 22, delta: -14, level: 'freezing',bd: [18, 28, 15, 55], cnt: 30,  pos: 5,  neu: 12, neg: 13 },
     ];
+
+    const mockIndustries = baseIndustries.map((d) => ({
+      ...d,
+      // 缩放声量和内容数
+      cnt: Math.max(1, Math.round(d.cnt * scale)),
+      pos: Math.max(0, Math.round(d.pos * scale)),
+      neu: Math.max(0, Math.round(d.neu * scale)),
+      neg: Math.max(0, Math.round(d.neg * scale)),
+      bd: [d.bd[0], Math.round(d.bd[1] * scale + 10 * (1 - scale)), d.bd[2], d.bd[3]] as [number, number, number, number],
+    }));
 
     const items: TemperatureSnapshot[] = mockIndustries.map((d) => ({
       id: `temp-${d.id}-${granularity}`,
