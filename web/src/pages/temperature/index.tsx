@@ -595,20 +595,21 @@ export default function TemperaturePage() {
   const hotItems  = items.filter((s) => s.level === 'hot' || s.level === 'warm');
   const coldItems = items.filter((s) => s.level === 'cool' || s.level === 'freezing');
 
-  // 行业温度排行横向柱状图
-  const rankOption = items.length
+  // 行业温度排行横向柱状图（按分数从高到低排列，图表从上到下）
+  const sortedForRank = [...items].sort((a, b) => b.score - a.score);
+  const rankOption = sortedForRank.length
     ? {
         tooltip: { trigger: 'axis' as const, axisPointer: { type: 'shadow' as const } },
         grid: { left: 90, right: 20, top: 10, bottom: 10 },
         xAxis: { type: 'value' as const, max: 100 },
         yAxis: {
           type: 'category' as const,
-          data: [...items].reverse().map((s) => s.industryName),
+          data: [...sortedForRank].reverse().map((s) => s.industryName),
         },
         series: [
           {
             type: 'bar',
-            data: [...items].reverse().map((s) => ({
+            data: [...sortedForRank].reverse().map((s) => ({
               value: s.score,
               itemStyle: { color: getProgressColor(s.score) },
             })),
