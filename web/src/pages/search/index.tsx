@@ -18,7 +18,7 @@ import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { contentsApi, monitoringApi } from '../../api/client';
 import ContentDetailDrawer from '../../components/ContentDetailDrawer';
-import type { ContentItem, ContentSearchParams, SourceType, SentimentLabel, RiskLevel, MarketType } from '../../api/types';
+import type { ContentItem, ContentSearchParams, SourceType, SentimentLabel, RiskLevel } from '../../api/types';
 
 const { RangePicker } = DatePicker;
 
@@ -43,11 +43,6 @@ const riskOptions = [
   { label: '极高风险', value: 'critical' },
 ];
 
-const marketOptions = [
-  { label: 'A股', value: 'cn' },
-  { label: '港股', value: 'hk' },
-  { label: '美股', value: 'us' },
-];
 
 const sentimentColors: Record<string, string> = {
   positive: 'green',
@@ -76,17 +71,6 @@ const sentimentLabels: Record<string, string> = {
   negative: '负面',
 };
 
-const marketLabels: Record<string, string> = {
-  cn: 'A股',
-  hk: '港股',
-  us: '美股',
-};
-
-const marketColors: Record<string, string> = {
-  cn: 'red',
-  hk: 'blue',
-  us: 'green',
-};
 
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
@@ -108,7 +92,7 @@ export default function SearchPage() {
   const [sourceType, setSourceType] = useState<SourceType | undefined>();
   const [sentiment, setSentiment] = useState<SentimentLabel | undefined>(initSentiment);
   const [riskLevel, setRiskLevel] = useState<RiskLevel | undefined>();
-  const [market, setMarket] = useState<MarketType | undefined>();
+
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
   const [projectId, setProjectId] = useState<string | undefined>();
   const [eventTypeFilter, setEventTypeFilter] = useState<string | undefined>(initEventType);
@@ -134,7 +118,7 @@ export default function SearchPage() {
       sourceType,
       sentiment,
       riskLevel,
-      market,
+
       startDate: dateRange?.[0]?.format('YYYY-MM-DD'),
       endDate: dateRange?.[1]?.format('YYYY-MM-DD'),
       monitoringProjectId: projectId,
@@ -147,7 +131,7 @@ export default function SearchPage() {
     setSourceType(undefined);
     setSentiment(undefined);
     setRiskLevel(undefined);
-    setMarket(undefined);
+
     setDateRange(null);
     setProjectId(undefined);
     setEventTypeFilter(undefined);
@@ -171,13 +155,7 @@ export default function SearchPage() {
         </a>
       ),
     },
-    {
-      title: '市场',
-      dataIndex: 'market',
-      key: 'market',
-      width: 70,
-      render: (m: string) => <Tag color={marketColors[m]}>{marketLabels[m]}</Tag>,
-    },
+
     {
       title: '来源',
       dataIndex: 'sourceType',
@@ -278,16 +256,7 @@ export default function SearchPage() {
               style={{ width: '100%' }}
             />
           </Col>
-          <Col xs={12} md={4}>
-            <Select
-              placeholder="市场"
-              options={marketOptions}
-              value={market}
-              onChange={setMarket}
-              allowClear
-              style={{ width: '100%' }}
-            />
-          </Col>
+
           <Col xs={12} md={4}>
             <Select
               placeholder="监测方案"
