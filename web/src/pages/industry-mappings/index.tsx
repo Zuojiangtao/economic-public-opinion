@@ -27,7 +27,8 @@ const INDUSTRY_TYPE_COLORS: Record<IndustryType, string> = {
   theme: 'purple',
 };
 
-function parseMultiValue(val: string): string[] {
+function parseMultiValue(val: string | undefined): string[] {
+  if (!val) return [];
   return val.split(/[,，\n]/).map((s) => s.trim()).filter(Boolean);
 }
 
