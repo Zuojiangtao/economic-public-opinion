@@ -542,6 +542,8 @@ export interface TemperatureListParams {
   type?: IndustryType;
   market?: MarketType;
   projectId?: string;
+  startDate?: string;
+  endDate?: string;
 }
 
 // ==================== H006 Dashboard Summary ====================

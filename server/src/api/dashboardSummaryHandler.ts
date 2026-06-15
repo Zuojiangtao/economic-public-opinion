@@ -89,6 +89,9 @@ export function buildDashboardSummary(
 
   // ============================================================
   // 行业温度
+  // 温度计算使用与 /temperatures 接口相同的时间窗口逻辑，
+  // 同时受 startDate/endDate 和 market/projectId 过滤影响，
+  // 确保两页数据完全一致。
   // ============================================================
   let industries = Array.from(industryMappings.values());
   if (market) {
@@ -104,35 +107,33 @@ export function buildDashboardSummary(
     }
   }
 
+  // 温度计算：与 /temperatures?granularity=hour 使用相同的时间窗口逻辑
+  // 默认 7 天；若有 startDate 则取 max(startDate, 7天前)
+  const tempWindowDays = 7;
+  const tempNow = Date.now();
+  const tempDefaultCutoff = new Date(tempNow - tempWindowDays * 86_400_000).toISOString();
+  const tempCutoff = (!startDate || startDate < tempDefaultCutoff) ? tempDefaultCutoff : startDate;
+
+  let tempItems = storage.getAll().filter((item) => item.publishedAt >= tempCutoff);
+  if (endDate) tempItems = tempItems.filter((item) => item.publishedAt <= endDate);
+
   const snapshots = computeTemperatureSnapshots(
     industries,
-    allItems,
+    tempItems,
     'hour',
     sourceConfigs,
   );
 
-  // 填充 scoreDelta：对比前一窗口（7-14天前）的内容
-  const prevCutoffStart = new Date(Date.now() - 14 * 86_400_000).toISOString();
-  const prevCutoffEnd = new Date(Date.now() - 7 * 86_400_000).toISOString();
-  let prevItems: ContentItem[] = storage.getAll().filter(
-    (i) => i.publishedAt >= prevCutoffStart && i.publishedAt < prevCutoffEnd,
+  // 填充 scoreDelta：对比前一窗口的内容
+  // 前一窗口时长 = 当前窗口时长，紧邻当前窗口之前
+  const currentWindowMs = endDate && startDate
+    ? new Date(endDate).getTime() - new Date(startDate).getTime()
+    : tempWindowDays * 86_400_000;
+  const prevCutoffEnd = tempCutoff;
+  const prevCutoffStart = new Date(new Date(prevCutoffEnd).getTime() - currentWindowMs).toISOString();
+  const prevItems = storage.getAll().filter(
+    (item) => item.publishedAt >= prevCutoffStart && item.publishedAt < prevCutoffEnd,
   );
-  if (market) prevItems = prevItems.filter((i) => i.market === market);
-  if (projectId) {
-    const p = projects.get(projectId);
-    if (p) {
-      const include = [
-        ...(p.keywords?.core ?? p.keywords?.include ?? []),
-        ...(p.keywords?.extended ?? []),
-      ].map((k: string) => k.toLowerCase());
-      const exclude = (p.keywords?.exclude ?? []).map((k: string) => k.toLowerCase());
-      prevItems = prevItems.filter((i) => {
-        if (i.matches?.some((m) => m.projectId === projectId)) return true;
-        const text = (i.title + ' ' + (i.content ?? '')).toLowerCase();
-        return include.some((k) => text.includes(k)) && !exclude.some((k) => text.includes(k));
-      });
-    }
-  }
 
   if (prevItems.length > 0) {
     const prevSnapshots = computeTemperatureSnapshots(industries, prevItems, 'hour', sourceConfigs);

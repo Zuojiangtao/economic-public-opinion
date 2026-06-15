@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Row,
   Col,
@@ -556,15 +556,37 @@ function TemperatureDetailDrawer({
 }
 
 // ============================================================
+// 时间范围工具函数（与工作台页面保持一致）
+// ============================================================
+type TimeRange = '今日' | '近24小时' | '近7日';
+
+function getDateRange(range: TimeRange): { startDate: string; endDate: string } {
+  const now = new Date();
+  const endDate = now.toISOString();
+  let startDate: string;
+  if (range === '今日') {
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    startDate = today.toISOString();
+  } else if (range === '近24小时') {
+    startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+  } else {
+    startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  }
+  return { startDate, endDate };
+}
+
+// ============================================================
 // 主页面
 // ============================================================
 export default function TemperaturePage() {
-  const [granularity, setGranularity] = useState<'hour' | 'day'>('hour');
+  const [timeRange, setTimeRange] = useState<TimeRange>('近7日');
+  const { startDate, endDate } = useMemo(() => getDateRange(timeRange), [timeRange]);
   const [selectedSnap, setSelectedSnap] = useState<TemperatureSnapshot | null>(null);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['temperatures', granularity],
-    queryFn: () => temperaturesApi.list({ granularity }),
+    queryKey: ['temperatures', { startDate, endDate }],
+    queryFn: () => temperaturesApi.list({ granularity: 'hour', startDate, endDate }),
   });
 
   const items = data?.items ?? [];
@@ -601,12 +623,9 @@ export default function TemperaturePage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
         <Typography.Title level={4} style={{ margin: 0 }}>行业温度指数</Typography.Title>
         <Segmented
-          value={granularity}
-          onChange={(v) => setGranularity(v as 'hour' | 'day')}
-          options={[
-            { label: '小时级', value: 'hour' },
-            { label: '日级',   value: 'day'  },
-          ]}
+          value={timeRange}
+          onChange={(v) => setTimeRange(v as TimeRange)}
+          options={['今日', '近24小时', '近7日']}
         />
       </div>
 
@@ -678,7 +697,7 @@ export default function TemperaturePage() {
         </div>
       )}
 
-      <TemperatureDetailDrawer snap={selectedSnap} granularity={granularity} onClose={() => setSelectedSnap(null)} />
+      <TemperatureDetailDrawer snap={selectedSnap} granularity="hour" onClose={() => setSelectedSnap(null)} />
     </div>
   );
 }

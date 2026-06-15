@@ -799,22 +799,31 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
   function refreshTemperatures(
     granularity: 'hour' | 'day' = 'hour',
     industryFilter?: (m: ReturnType<typeof industryMappings.values> extends IterableIterator<infer T> ? T : never) => boolean,
+    startDate?: string,
+    endDate?: string,
   ) {
     let industries = Array.from(industryMappings.values());
     if (industryFilter) industries = industries.filter(industryFilter);
 
-    // 时间窗口过滤：小时级取最近 7 天，日级取最近 30 天
+    // 时间窗口：优先使用前端传入的 startDate/endDate；否则按粒度使用默认窗口
     const windowDays = granularity === 'hour' ? 7 : 30;
     const now = Date.now();
-    const cutoff = new Date(now - windowDays * 86_400_000).toISOString();
-    const currentItems = storage.getAll().filter((item) => item.publishedAt >= cutoff);
+    const defaultCutoff = new Date(now - windowDays * 86_400_000).toISOString();
+    const cutoff = (!startDate || startDate < defaultCutoff) ? defaultCutoff : startDate;
+
+    let currentItems = storage.getAll().filter((item) => item.publishedAt >= cutoff);
+    if (endDate) currentItems = currentItems.filter((item) => item.publishedAt <= endDate);
 
     const snapshots = computeTemperatureSnapshots(industries, currentItems, granularity, sourceConfigs);
 
     // 计算前一窗口的快照，用于 scoreDelta
-    // 前一窗口 = [2*windowDays 前, windowDays 前)
-    const prevCutoffStart = new Date(now - 2 * windowDays * 86_400_000).toISOString();
+    // 前一窗口时长 = 当前窗口时长，紧邻当前窗口之前
+    const currentWindowMs = endDate && startDate
+      ? new Date(endDate).getTime() - new Date(startDate).getTime()
+      : windowDays * 86_400_000;
+    const currentWindowEnd = endDate ? new Date(endDate).getTime() : now;
     const prevCutoffEnd = cutoff;
+    const prevCutoffStart = new Date(new Date(prevCutoffEnd).getTime() - currentWindowMs).toISOString();
     const prevItems = storage.getAll().filter(
       (item) => item.publishedAt >= prevCutoffStart && item.publishedAt < prevCutoffEnd,
     );
@@ -847,12 +856,16 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
    *   type         = industry | sector | concept | theme（行业类型过滤）
    *   market       = cn | hk | us（按包含该市场股票过滤）
    *   projectId    = 监测方案 ID（仅返回该方案 targetIds 内的行业）
+   *   startDate    = ISO 时间字符串（时间窗口起始，默认取 7/30 天前）
+   *   endDate      = ISO 时间字符串（时间窗口截止，默认 now）
    */
   router.get('/temperatures', (req, res) => {
     const granularity = req.query.granularity === 'day' ? 'day' : 'hour';
     const type = req.query.type as IndustryType | undefined;
     const market = req.query.market as MarketType | undefined;
     const projectId = req.query.projectId as string | undefined;
+    const startDate = req.query.startDate as string | undefined;
+    const endDate = req.query.endDate as string | undefined;
 
     // 确定目标行业 ID 集合（来自监测方案）
     let targetIds: Set<string> | undefined;
@@ -868,7 +881,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
       return true;
     };
 
-    refreshTemperatures(granularity, industryFilter as Parameters<typeof refreshTemperatures>[1]);
+    refreshTemperatures(granularity, industryFilter as Parameters<typeof refreshTemperatures>[1], startDate, endDate);
     const snapshots = getSnapshotsByGranularity(granularity).filter((s) => {
       if (type) {
         const m = industryMappings.get(s.industryId);
