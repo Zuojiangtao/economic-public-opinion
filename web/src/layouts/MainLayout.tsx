@@ -14,6 +14,7 @@ import {
   MenuUnfoldOutlined,
   ApartmentOutlined,
   FireOutlined,
+  ExperimentOutlined,
 } from '@ant-design/icons';
 
 const { Header, Sider, Content } = Layout;
@@ -25,6 +26,7 @@ const menuItems = [
   { key: '/alerts', icon: <AlertOutlined />, label: '预警中心' },
   { key: '/industry-mappings', icon: <ApartmentOutlined />, label: '行业映射' },
   { key: '/temperature', icon: <FireOutlined />, label: '行业温度' },
+  { key: '/deep-analysis', icon: <ExperimentOutlined />, label: '深度分析' },
   { key: '/settings', icon: <SettingOutlined />, label: '系统配置' },
 ];
 

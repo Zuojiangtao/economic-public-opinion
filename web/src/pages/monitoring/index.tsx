@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import {
-  Card,
   Table,
   Button,
   Tag,
@@ -21,6 +20,7 @@ import {
 import { PlusOutlined, EditOutlined, DeleteOutlined, InfoCircleOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { monitoringApi, industryMappingsApi } from '../../api/client';
+import Panel from '../../components/Panel';
 import type {
   MonitoringProject,
   MonitoringProjectInput,
@@ -221,7 +221,7 @@ export default function MonitoringPage() {
       render: (name: string, record: MonitoringProject) => (
         <div>
           <div style={{ fontWeight: 500 }}>{name}</div>
-          <div style={{ fontSize: 12, color: '#999' }}>{record.description}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{record.description}</div>
         </div>
       ),
     },
@@ -346,7 +346,7 @@ export default function MonitoringPage() {
         </Button>
       </div>
 
-      <Card>
+      <Panel>
         <Table<MonitoringProject>
           columns={columns}
           dataSource={data?.items}
@@ -356,7 +356,7 @@ export default function MonitoringPage() {
           size="middle"
           scroll={{ x: 1100 }}
         />
-      </Card>
+      </Panel>
 
       <Modal
         title={editingProject ? '编辑方案' : '新建方案'}
@@ -376,7 +376,7 @@ export default function MonitoringPage() {
       >
         <Form form={form} layout="vertical" style={{ marginTop: 8 }}>
           {/* ── 基本信息 ── */}
-          <Divider orientation="left" style={{ marginTop: 0 }}>
+          <Divider titlePlacement="left" style={{ marginTop: 0 }}>
             基本信息
           </Divider>
           <Form.Item
@@ -399,7 +399,7 @@ export default function MonitoringPage() {
           </Form.Item>
 
           {/* ── 监测对象 ── */}
-          <Divider orientation="left">监测对象</Divider>
+          <Divider titlePlacement="left">监测对象</Divider>
           <Form.Item
             name="targetType"
             label="监测类型"
@@ -414,7 +414,7 @@ export default function MonitoringPage() {
               <span>
                 关联行业/板块&nbsp;
                 <Tooltip title="从已配置的行业映射中选择，温度计算将与所选行业打通">
-                  <InfoCircleOutlined style={{ color: '#999' }} />
+                  <InfoCircleOutlined style={{ color: 'var(--text-muted)' }} />
                 </Tooltip>
               </span>
             }
@@ -432,14 +432,14 @@ export default function MonitoringPage() {
           </Form.Item>
 
           {/* ── 关键词配置 ── */}
-          <Divider orientation="left">关键词配置</Divider>
+          <Divider titlePlacement="left">关键词配置</Divider>
           <Form.Item
             name="coreKeywords"
             label={
               <span>
                 核心词&nbsp;
                 <Tooltip title="必须命中的核心关键词，权重最高">
-                  <InfoCircleOutlined style={{ color: '#999' }} />
+                  <InfoCircleOutlined style={{ color: 'var(--text-muted)' }} />
                 </Tooltip>
               </span>
             }
@@ -454,7 +454,7 @@ export default function MonitoringPage() {
               <span>
                 扩展词&nbsp;
                 <Tooltip title="辅助扩展匹配范围的关键词，权重次于核心词">
-                  <InfoCircleOutlined style={{ color: '#999' }} />
+                  <InfoCircleOutlined style={{ color: 'var(--text-muted)' }} />
                 </Tooltip>
               </span>
             }
@@ -471,7 +471,7 @@ export default function MonitoringPage() {
           </Form.Item>
 
           {/* ── 数据源配置 ── */}
-          <Divider orientation="left">数据源配置</Divider>
+          <Divider titlePlacement="left">数据源配置</Divider>
           <div style={{ marginBottom: 16 }}>
             <div
               style={{
@@ -479,7 +479,7 @@ export default function MonitoringPage() {
                 gridTemplateColumns: '60px 1fr 80px',
                 gap: '0 8px',
                 fontSize: 12,
-                color: '#999',
+                color: 'var(--text-muted)',
                 marginBottom: 6,
                 paddingLeft: 4,
               }}
@@ -522,13 +522,13 @@ export default function MonitoringPage() {
                       onChange={(e) =>
                         updateSourceWeight(key, { weight: Number(e.target.value) / 100 })
                       }
-                      style={{ flex: 1, accentColor: sw.enabled ? '#1677ff' : '#d9d9d9' }}
+                      style={{ flex: 1, accentColor: sw.enabled ? 'var(--accent-info)' : 'var(--text-disabled)' }}
                     />
                   </div>
                   <span
                     style={{
                       textAlign: 'right',
-                      color: sw.enabled ? '#1677ff' : '#bbb',
+                      color: sw.enabled ? 'var(--accent-info)' : 'var(--text-muted)',
                       fontWeight: 500,
                     }}
                   >
@@ -540,7 +540,7 @@ export default function MonitoringPage() {
           </div>
 
           {/* ── 阈值与输出周期 ── */}
-          <Divider orientation="left">阈值与输出周期</Divider>
+          <Divider titlePlacement="left">阈值与输出周期</Divider>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
             <Form.Item
               name="temperatureThreshold"
@@ -548,7 +548,7 @@ export default function MonitoringPage() {
                 <span>
                   温度预警阈值&nbsp;
                   <Tooltip title="行业温度超过此值时触发预警（0-100）">
-                    <InfoCircleOutlined style={{ color: '#999' }} />
+                    <InfoCircleOutlined style={{ color: 'var(--text-muted)' }} />
                   </Tooltip>
                 </span>
               }
@@ -562,7 +562,7 @@ export default function MonitoringPage() {
                 <span>
                   紧急预警阈值&nbsp;
                   <Tooltip title="行业温度超过此值时触发高优先级预警（0-100）">
-                    <InfoCircleOutlined style={{ color: '#999' }} />
+                    <InfoCircleOutlined style={{ color: 'var(--text-muted)' }} />
                   </Tooltip>
                 </span>
               }

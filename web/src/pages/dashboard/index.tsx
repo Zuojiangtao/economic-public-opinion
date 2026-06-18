@@ -3,81 +3,62 @@ import { useNavigate } from 'react-router-dom';
 import {
   Row,
   Col,
-  Card,
-  Statistic,
-  Table,
   Tag,
   Typography,
   Badge,
-  Button,
   Segmented,
   Space,
   Empty,
   Tooltip,
-  Progress,
-  Alert as AntAlert,
 } from 'antd';
 import {
   WarningOutlined,
   AlertOutlined,
   FireOutlined,
-  ThunderboltOutlined,
   RiseOutlined,
-  FallOutlined,
-  ArrowUpOutlined,
-  ArrowDownOutlined,
   CheckCircleOutlined,
   ExclamationCircleOutlined,
-  CloseCircleOutlined,
-  ProjectOutlined,
 } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardApi } from '@/api/client.ts';
 import type {
   Alert,
   TemperatureLevel,
-  FinancialEventType,
   ContentItem,
+  FinancialEventType,
 } from '@/api/types.ts';
 import ContentDetailDrawer from '@/components/ContentDetailDrawer.tsx';
+import Panel from '@/components/Panel.tsx';
+import StatCard, { getTemperatureColor } from '@/components/StatCard.tsx';
+import ProgressBar from '@/components/ProgressBar.tsx';
+import SentimentBadge from '@/components/SentimentBadge.tsx';
+import StatusDot from '@/components/StatusDot.tsx';
 
 // ============================================================
-// 温度分层展示配置（与 temperature 页保持一致）
+// Temperature level config (CSS variables)
 // ============================================================
-const levelConfig: Record<TemperatureLevel, { label: string; color: string; tagColor: string }> = {
-  hot:      { label: '过热', color: '#ff4d4f', tagColor: 'red' },
-  warm:     { label: '偏热', color: '#fa8c16', tagColor: 'orange' },
-  neutral:  { label: '中性', color: '#1677ff', tagColor: 'blue' },
-  cool:     { label: '偏冷', color: '#52c41a', tagColor: 'cyan' },
-  freezing: { label: '冰点', color: '#722ed1', tagColor: 'purple' },
+const levelConfig: Record<TemperatureLevel, { label: string; color: string }> = {
+  hot:      { label: '过热', color: 'var(--temp-overheated)' },
+  warm:     { label: '偏热', color: 'var(--temp-warm)' },
+  neutral:  { label: '中性', color: 'var(--temp-neutral)' },
+  cool:     { label: '偏冷', color: 'var(--temp-cool)' },
+  freezing: { label: '冰点', color: 'var(--temp-freezing)' },
 };
 
 const riskColorMap: Record<string, string> = {
-  low: 'green',
-  medium: 'gold',
-  high: 'orange',
-  critical: 'red',
+  low: 'var(--accent-success)',
+  medium: 'var(--accent-warning)',
+  high: '#F97316',
+  critical: 'var(--accent-danger)',
 };
 
 const statusMap: Record<string, { text: string; color: string }> = {
-  pending:    { text: '待处理', color: 'red' },
-  processing: { text: '处理中', color: 'blue' },
-  resolved:   { text: '已解决', color: 'green' },
-  ignored:    { text: '已忽略', color: 'default' },
+  pending:    { text: '待处理', color: 'var(--accent-danger)' },
+  processing: { text: '处理中', color: 'var(--accent-info)' },
+  resolved:   { text: '已解决', color: 'var(--accent-success)' },
+  ignored:    { text: '已忽略', color: 'var(--text-muted)' },
 };
 
-const sentimentColors: Record<string, string> = {
-  positive: 'green',
-  neutral: 'blue',
-  negative: 'red',
-};
-const sentimentLabels: Record<string, string> = {
-  positive: '正面',
-  neutral: '中性',
-  negative: '负面',
-};
-
-// H009 事件类型标签
 const eventTypeLabels: Partial<Record<FinancialEventType, string>> = {
   policy_change:       '政策变化',
   earnings_forecast:   '业绩预告',
@@ -91,9 +72,6 @@ const eventTypeLabels: Partial<Record<FinancialEventType, string>> = {
 
 const highRiskEventTypes: FinancialEventType[] = ['regulatory_penalty', 'debt_default'];
 
-// ============================================================
-// H005: 时间范围工具函数
-// ============================================================
 type TimeRange = '今日' | '近24小时' | '近7日';
 
 function getDateRange(range: TimeRange): { startDate: string; endDate: string } {
@@ -112,84 +90,68 @@ function getDateRange(range: TimeRange): { startDate: string; endDate: string } 
   return { startDate, endDate };
 }
 
-// ============================================================
-// Dashboard
-// ============================================================
+function getTempBarColor(score: number): string {
+  return getTemperatureColor(score);
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [timeRange, setTimeRange] = useState<TimeRange>('今日');
   const { startDate, endDate } = useMemo(() => getDateRange(timeRange), [timeRange]);
 
-  // H007: 单路聚合请求替代多路零散请求
-  const { data: summary, isLoading } = useQuery({
+  const { data: summary } = useQuery({
     queryKey: ['dashboardSummary', { startDate, endDate }],
     queryFn: () => dashboardApi.getSummary({ startDate, endDate }),
   });
 
-  // H008: 关键内容详情抽屉
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
 
-  // 从聚合数据中解构各模块数据
   const tempTop5 = summary?.temperatureTopList ?? [];
-  const risingTop3 = summary?.risingList ?? [];
-  const fallingTop3 = summary?.fallingList ?? [];
   const topAlerts = summary?.topAlerts ?? [];
   const keyContents = summary?.keyContents ?? [];
   const eventDist = summary?.eventDistribution;
   const crawlerHealth = summary?.crawlerHealth;
-  const projectHits = summary?.monitoringProjectHits ?? [];
 
-  // H004: 预警列表列定义
-  const alertColumns = [
+  const kpiCards = [
     {
-      title: '标题',
-      dataIndex: 'title',
-      key: 'title',
-      ellipsis: true,
+      label: '待处理预警',
+      value: summary?.pendingAlertCount ?? 0,
+      color: 'var(--accent-danger)',
+      icon: <WarningOutlined />,
+      onClick: () => navigate('/alerts?status=pending'),
     },
     {
-      title: '风险',
-      dataIndex: 'riskLevel',
-      key: 'riskLevel',
-      width: 90,
-      render: (level: string) => <Tag color={riskColorMap[level]}>{level.toUpperCase()}</Tag>,
+      label: '高风险预警',
+      value: summary?.highRiskAlertCount ?? 0,
+      color: '#F97316',
+      icon: <AlertOutlined />,
+      onClick: () => navigate('/alerts?riskLevel=high'),
     },
     {
-      title: '状态',
-      dataIndex: 'status',
-      key: 'status',
-      width: 90,
-      render: (s: string) => {
-        const st = statusMap[s];
-        return st ? <Tag color={st.color}>{st.text}</Tag> : s;
-      },
+      label: '最热行业',
+      value: summary?.hotIndustry?.score ?? '-',
+      color: summary?.hotIndustry ? getTemperatureColor(summary.hotIndustry.score) : undefined,
+      icon: <FireOutlined />,
+      trendLabel: summary?.hotIndustry?.industryName,
+      onClick: () => navigate('/temperature'),
     },
     {
-      title: '触发时间',
-      dataIndex: 'triggeredAt',
-      key: 'triggeredAt',
-      width: 130,
-      render: (t: string) =>
-        new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      width: 70,
-      render: (_: unknown, record: Alert) => (
-        <Button size="small" type="link" onClick={() => navigate(`/alerts?openId=${record.id}`)}>
-          处置
-        </Button>
-      ),
+      label: '升温最快',
+      value: summary?.fastestRisingIndustry?.scoreDelta !== undefined
+        ? '+' + summary.fastestRisingIndustry.scoreDelta
+        : '-',
+      color: '#F97316',
+      icon: <RiseOutlined />,
+      trendLabel: summary?.fastestRisingIndustry?.industryName,
+      onClick: () => navigate('/temperature'),
     },
   ];
 
   return (
-    <div>
-      {/* H005: 标题行 + 时间范围筛选 */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <Typography.Title level={4} style={{ margin: 0 }}>工作台</Typography.Title>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <Typography.Title level={4} style={{ margin: 0, color: 'var(--text-primary)' }}>工作台</Typography.Title>
         <Segmented
           value={timeRange}
           onChange={(v) => setTimeRange(v as TimeRange)}
@@ -197,556 +159,334 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* H002: 6 个异常指标卡 */}
-      <Row gutter={[16, 16]}>
-        {/* 1. 待处理预警数 */}
-        <Col xs={24} sm={12} md={8} xl={4}>
-          <Card
-            loading={isLoading}
-            hoverable
-            onClick={() => navigate('/alerts?status=pending')}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="待处理预警"
-              value={summary?.pendingAlertCount ?? 0}
-              prefix={<WarningOutlined />}
-              styles={{ content: { color: '#ff4d4f' } }}
+      {/* Row 1: KPI Cards */}
+      <Row gutter={[12, 12]}>
+        {kpiCards.map((kpi, idx) => (
+          <Col xs={24} sm={12} lg={6} key={idx}>
+            <StatCard
+              label={kpi.label}
+              value={kpi.value}
+              color={kpi.color}
+              icon={kpi.icon}
+              trendLabel={kpi.trendLabel}
+              onClick={kpi.onClick}
             />
-          </Card>
-        </Col>
-
-        {/* 2. 高风险预警数 */}
-        <Col xs={24} sm={12} md={8} xl={4}>
-          <Card
-            loading={isLoading}
-            hoverable
-            onClick={() => navigate('/alerts?riskLevel=high')}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="高风险预警"
-              value={summary?.highRiskAlertCount ?? 0}
-              prefix={<AlertOutlined />}
-              styles={{ content: { color: '#fa541c' } }}
-            />
-          </Card>
-        </Col>
-
-        {/* 3. 最热行业 */}
-        <Col xs={24} sm={12} md={8} xl={4}>
-          <Card
-            loading={isLoading}
-            hoverable
-            onClick={() => navigate('/temperature')}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="最热行业"
-              value={summary?.hotIndustry?.score ?? '-'}
-              suffix={summary?.hotIndustry ? '分' : ''}
-              prefix={<FireOutlined />}
-              styles={{ content: { color: '#ff4d4f' } }}
-            />
-            {summary?.hotIndustry && (
-              <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{summary.hotIndustry.industryName}</div>
-            )}
-          </Card>
-        </Col>
-
-        {/* 4. 升温最快行业 */}
-        <Col xs={24} sm={12} md={8} xl={4}>
-          <Card
-            loading={isLoading}
-            hoverable
-            onClick={() => navigate('/temperature')}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="升温最快行业"
-              value={summary?.fastestRisingIndustry?.scoreDelta !== undefined
-                ? `+${summary.fastestRisingIndustry.scoreDelta}`
-                : '-'}
-              prefix={<RiseOutlined />}
-              styles={{ content: { color: '#fa8c16' } }}
-            />
-            {summary?.fastestRisingIndustry && (
-              <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{summary.fastestRisingIndustry.industryName}</div>
-            )}
-          </Card>
-        </Col>
-
-        {/* 5. 负面占比最高行业 */}
-        <Col xs={24} sm={12} md={8} xl={4}>
-          <Card
-            loading={isLoading}
-            hoverable
-            onClick={() => summary?.mostNegativeIndustry &&
-              navigate(`/search?sentiment=negative&industryId=${summary.mostNegativeIndustry.industryId}`)
-            }
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="负面占比最高"
-              value={summary?.mostNegativeIndustry
-                ? `${Math.round(summary.mostNegativeIndustry.negativeRatio * 100)}%`
-                : '-'}
-              prefix={<FallOutlined />}
-              styles={{ content: { color: '#722ed1' } }}
-            />
-            {summary?.mostNegativeIndustry && (
-              <div style={{ fontSize: 12, color: '#666', marginTop: 4 }}>{summary.mostNegativeIndustry.industryName}</div>
-            )}
-          </Card>
-        </Col>
-
-        {/* 6. 高风险事件数（受时间范围影响） */}
-        <Col xs={24} sm={12} md={8} xl={4}>
-          <Card
-            loading={isLoading}
-            styles={{ body: { padding: '16px 20px' } }}
-          >
-            <Statistic
-              title="高风险事件"
-              value={summary?.recentHighRiskEventCount ?? 0}
-              prefix={<ThunderboltOutlined />}
-              styles={{ content: { color: '#cf1322' } }}
-            />
-            <div style={{ fontSize: 12, color: '#999', marginTop: 4 }}>{timeRange}异常事件</div>
-          </Card>
-        </Col>
+          </Col>
+        ))}
       </Row>
 
-      {/* H003: 行业温度摘要（第二行） */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {/* 左侧：温度 Top 5 */}
+      {/* Row 2: Temperature Ranking + Alert List */}
+      <Row gutter={[20, 20]}>
         <Col xs={24} lg={14}>
-          <Card
-            title="行业温度 Top 5"
-            loading={isLoading}
+          <Panel
+            title="行业温度排行"
             extra={
-              <a onClick={() => navigate('/temperature')} style={{ cursor: 'pointer' }}>
-                查看全部
+              <a onClick={() => navigate('/temperature')} style={{ cursor: 'pointer', color: 'var(--accent-info)', fontSize: 12 }}>
+                查看全部 →
               </a>
             }
           >
             {tempTop5.length === 0 ? (
               <Empty description="暂无数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : (
-              tempTop5.map((t, idx) => {
-                const cfg = levelConfig[t.level];
-                return (
-                  <div
-                    key={t.industryId}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      padding: '8px 0',
-                      borderBottom: idx < tempTop5.length - 1 ? '1px solid #f0f0f0' : 'none',
-                      cursor: 'pointer',
-                    }}
-                    onClick={() => navigate('/temperature')}
-                  >
-                    <span style={{ width: 20, color: '#999', fontSize: 12 }}>{idx + 1}</span>
-                    <Tag color={cfg.tagColor} style={{ minWidth: 42, textAlign: 'center', margin: '0 8px' }}>
-                      {cfg.label}
-                    </Tag>
-                    <span style={{ flex: 1, fontWeight: 500 }}>{t.industryName}</span>
-                    <Tooltip
-                      title={`情绪${t.breakdown.sentimentScore} 声量${t.breakdown.volumeAnomalyScore} 传播${t.breakdown.spreadIntensityScore} 可信度${t.breakdown.sourceCredibilityScore}`}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {tempTop5.map((t, idx) => {
+                  const cfg = levelConfig[t.level];
+                  return (
+                    <div
+                      key={t.industryId}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: '10px 0',
+                        borderBottom: idx < tempTop5.length - 1 ? '1px solid var(--border-default)' : 'none',
+                        cursor: 'pointer',
+                        gap: 10,
+                      }}
+                      onClick={() => navigate('/temperature')}
                     >
-                      <span style={{ color: cfg.color, fontWeight: 600, fontSize: 16, minWidth: 36, textAlign: 'right' }}>
-                        {t.score}
+                      <span style={{ width: 20, color: 'var(--text-muted)', fontSize: 12, fontFamily: 'var(--font-mono)' }}>
+                        {idx + 1}
                       </span>
-                    </Tooltip>
-                    {t.scoreDelta !== undefined && (
-                      <span
-                        style={{
-                          marginLeft: 12,
-                          color: t.scoreDelta > 0 ? '#ff4d4f' : t.scoreDelta < 0 ? '#52c41a' : '#999',
+                      <span style={{ flex: 1, fontWeight: 500, fontSize: 14, color: 'var(--text-primary)' }}>
+                        {t.industryName}
+                      </span>
+                      <Tooltip
+                        title={
+                          '情绪' + t.breakdown.sentimentScore +
+                          ' 声量' + t.breakdown.volumeAnomalyScore +
+                          ' 传播' + t.breakdown.spreadIntensityScore +
+                          ' 可信度' + t.breakdown.sourceCredibilityScore
+                        }
+                      >
+                        <span style={{ color: cfg.color, fontWeight: 700, fontSize: 14, fontFamily: 'var(--font-mono)', minWidth: 36, textAlign: 'right' }}>
+                          {t.score}
+                        </span>
+                      </Tooltip>
+                      {t.scoreDelta !== undefined && (
+                        <span style={{
+                          color: t.scoreDelta > 0 ? 'var(--accent-danger)' : t.scoreDelta < 0 ? 'var(--accent-success)' : 'var(--text-muted)',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 600,
+                          fontSize: 12,
                           minWidth: 40,
                           textAlign: 'right',
-                          fontSize: 12,
-                        }}
-                      >
-                        {t.scoreDelta > 0 ? '+' : ''}{t.scoreDelta}
-                      </span>
-                    )}
-                  </div>
-                );
-              })
+                        }}>
+                          {t.scoreDelta > 0 ? '+' : ''}{t.scoreDelta}
+                        </span>
+                      )}
+                      <div style={{ width: 80, flexShrink: 0 }}>
+                        <ProgressBar value={t.score} color={getTempBarColor(t.score)} height={4} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
-          </Card>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 8, borderTop: '1px solid var(--border-default)' }}>
+              {Object.entries(levelConfig).map(([key, cfg]) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: cfg.color }} />
+                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{cfg.label}</span>
+                </div>
+              ))}
+            </div>
+          </Panel>
         </Col>
 
-        {/* 右侧：升降温前 3 */}
         <Col xs={24} lg={10}>
-          <Card
-            title="升降温动态"
-            loading={isLoading}
+          <Panel
+            title={
+              <Space size={8}>
+                预警列表
+                {summary?.pendingAlertCount ? (
+                  <Badge count={summary.pendingAlertCount} overflowCount={99} style={{ backgroundColor: 'var(--accent-danger)' }} />
+                ) : null}
+              </Space>
+            }
             extra={
-              <a onClick={() => navigate('/temperature')} style={{ cursor: 'pointer' }}>
-                查看全部
+              <a onClick={() => navigate('/alerts')} style={{ cursor: 'pointer', color: 'var(--accent-info)', fontSize: 12 }}>
+                查看全部 →
               </a>
             }
           >
-            {risingTop3.length === 0 && fallingTop3.length === 0 ? (
-              <Empty description="暂无数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            {topAlerts.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {topAlerts.map((alert, idx) => (
+                  <div
+                    key={alert.id}
+                    style={{
+                      padding: '10px 0',
+                      borderBottom: idx < topAlerts.length - 1 ? '1px solid var(--border-default)' : 'none',
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => navigate('/alerts?openId=' + alert.id)}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                      <span style={{
+                        flex: 1,
+                        fontWeight: 500,
+                        fontSize: 13,
+                        color: 'var(--text-primary)',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}>
+                        {alert.title}
+                      </span>
+                      <Tag
+                        style={{
+                          background: alert.riskLevel === 'critical'
+                            ? 'var(--accent-danger-bg)'
+                            : alert.riskLevel === 'high'
+                              ? 'var(--accent-warning-bg)'
+                              : 'var(--bg-input)',
+                          color: riskColorMap[alert.riskLevel] || 'var(--text-muted)',
+                          border: 'none',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 10,
+                          fontWeight: 600,
+                          lineHeight: '16px',
+                          padding: '0 6px',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {alert.riskLevel.toUpperCase()}
+                      </Tag>
+                    </div>
+                    <span style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                      {new Date(alert.triggeredAt).toLocaleString('zh-CN', {
+                        month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+                ))}
+              </div>
             ) : (
-              <>
-                {risingTop3.length > 0 && (
-                  <>
-                    <div style={{ fontWeight: 500, color: '#ff4d4f', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <ArrowUpOutlined /> 升温前 3
-                    </div>
-                    {risingTop3.map((t, idx) => (
-                      <div
-                        key={t.industryId}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          padding: '7px 0',
-                          borderBottom: '1px solid #f0f0f0',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => navigate('/temperature')}
-                      >
-                        <Space size={6}>
-                          <span style={{ color: '#999', fontSize: 12 }}>{idx + 1}</span>
-                          <span>{t.industryName}</span>
-                        </Space>
-                        <span style={{ color: '#ff4d4f', fontWeight: 600 }}>+{t.scoreDelta}</span>
-                      </div>
-                    ))}
-                  </>
-                )}
+              <Empty description="暂无预警" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            )}
+          </Panel>
+        </Col>
+      </Row>
 
-                {fallingTop3.length > 0 && (
-                  <div style={{ marginTop: risingTop3.length > 0 ? 14 : 0 }}>
-                    <div style={{ fontWeight: 500, color: '#52c41a', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <ArrowDownOutlined /> 降温前 3
+      {/* Row 3: Risk Distribution + Key Content */}
+      <Row gutter={[20, 20]}>
+        <Col xs={24} lg={10}>
+          <Panel title="风险分布">
+            {!eventDist || eventDist.distribution.length === 0 ? (
+              <Empty description="暂无事件数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {eventDist.distribution.map((item) => {
+                  const isHighRisk = highRiskEventTypes.includes(item.type as FinancialEventType);
+                  const pct = eventDist.total > 0 ? Math.round((item.count / eventDist.total) * 100) : 0;
+                  return (
+                    <div key={item.type} style={{ cursor: 'pointer' }} onClick={() => navigate('/search?eventType=' + item.type)}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{
+                            fontSize: 13,
+                            fontWeight: isHighRisk ? 600 : 400,
+                            color: isHighRisk ? 'var(--accent-danger)' : 'var(--text-primary)',
+                          }}>
+                            {eventTypeLabels[item.type as FinancialEventType] ?? item.type}
+                          </span>
+                          {isHighRisk && (
+                            <span style={{
+                              fontSize: 10,
+                              background: 'var(--accent-danger-bg)',
+                              color: 'var(--accent-danger)',
+                              borderRadius: 'var(--radius-sm)',
+                              padding: '0 4px',
+                              lineHeight: '16px',
+                              fontWeight: 600,
+                            }}>
+                              高危
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 12, color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                          {item.count} 条
+                        </span>
+                      </div>
+                      <ProgressBar value={pct} color={isHighRisk ? 'var(--accent-danger)' : 'var(--accent-info)'} height={4} />
                     </div>
-                    {fallingTop3.map((t, idx) => (
-                      <div
-                        key={t.industryId}
-                        style={{
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          padding: '7px 0',
-                          borderBottom: idx < fallingTop3.length - 1 ? '1px solid #f0f0f0' : 'none',
-                          cursor: 'pointer',
-                        }}
-                        onClick={() => navigate('/temperature')}
-                      >
-                        <Space size={6}>
-                          <span style={{ color: '#999', fontSize: 12 }}>{idx + 1}</span>
-                          <span>{t.industryName}</span>
+                  );
+                })}
+              </div>
+            )}
+
+            {crawlerHealth && (
+              <div style={{ marginTop: 8, paddingTop: 14, borderTop: '1px solid var(--border-default)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+                  {crawlerHealth.failedCount === 0 ? (
+                    <CheckCircleOutlined style={{ color: 'var(--accent-success)' }} />
+                  ) : (
+                    <ExclamationCircleOutlined style={{ color: 'var(--accent-warning)' }} />
+                  )}
+                  <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-primary)' }}>采集健康摘要</span>
+                </div>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>可用数据源</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 18, color: crawlerHealth.failedCount === 0 ? 'var(--accent-success)' : 'var(--accent-warning)' }}>
+                      {crawlerHealth.availableCount}
+                      <span style={{ fontSize: 12, fontWeight: 400, color: 'var(--text-muted)' }}> / {crawlerHealth.totalCount}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>异常来源</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, fontSize: 18, color: crawlerHealth.failedCount === 0 ? 'var(--accent-success)' : 'var(--accent-danger)' }}>
+                      {crawlerHealth.failedCount}
+                    </div>
+                  </div>
+                </div>
+                {crawlerHealth.failedCount > 0 && (
+                  <div style={{ marginTop: 8 }}>
+                    {crawlerHealth.recentFailures.map((f) => (
+                      <div key={f.name} style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        padding: '4px 0',
+                        borderBottom: '1px solid var(--border-default)',
+                        fontSize: 12,
+                      }}>
+                        <Space size={4}>
+                          <StatusDot status="异常" />
+                          <span style={{ color: 'var(--text-primary)' }}>{f.sourceName}</span>
                         </Space>
-                        <span style={{ color: '#52c41a', fontWeight: 600 }}>{t.scoreDelta}</span>
+                        <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
+                          {f.lastFailedAt
+                            ? new Date(f.lastFailedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                            : '-'}
+                        </span>
                       </div>
                     ))}
                   </div>
                 )}
-              </>
+              </div>
             )}
-          </Card>
+          </Panel>
         </Col>
-      </Row>
 
-      {/* H008: 关键驱动内容 + H009: 风险事件分布（第三行） */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {/* H008: 关键驱动内容 */}
         <Col xs={24} lg={14}>
-          <Card
-            title="关键驱动内容"
-            loading={isLoading}
+          <Panel
+            title="关键内容"
             extra={
-              <a onClick={() => navigate('/search')} style={{ cursor: 'pointer' }}>
-                查看全部
+              <a onClick={() => navigate('/search')} style={{ cursor: 'pointer', color: 'var(--accent-info)', fontSize: 12 }}>
+                查看全部 →
               </a>
             }
           >
             {keyContents.length === 0 ? (
               <Empty description="暂无高影响力内容" image={Empty.PRESENTED_IMAGE_SIMPLE} />
             ) : (
-              keyContents.map((item, idx) => {
-                const topEvent = item.nlp.events?.sort((a, b) => b.confidence - a.confidence)[0];
-                return (
-                  <div
-                    key={item.id}
-                    style={{
-                      padding: '10px 0',
-                      borderBottom: idx < keyContents.length - 1 ? '1px solid #f0f0f0' : 'none',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
-                      <a
-                        style={{ flex: 1, fontWeight: 500, fontSize: 14 }}
-                        onClick={() => {
-                          setSelectedContent(item);
-                          setDrawerOpen(true);
-                        }}
-                      >
-                        {item.title.length > 50 ? item.title.slice(0, 50) + '…' : item.title}
-                      </a>
-                      <Tag color={sentimentColors[item.nlp.sentimentLabel]}>
-                        {sentimentLabels[item.nlp.sentimentLabel]}
-                      </Tag>
-                      <Tag color={riskColorMap[item.nlp.riskLevel]}>
-                        {item.nlp.riskLevel.toUpperCase()}
-                      </Tag>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#999', marginBottom: 4 }}>
-                      {item.sourceName} · {new Date(item.publishedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                    {item.nlp.summary && (
-                      <div style={{ fontSize: 12, color: '#555', marginBottom: topEvent ? 4 : 0 }}>
-                        {item.nlp.summary.length > 80 ? item.nlp.summary.slice(0, 80) + '…' : item.nlp.summary}
-                      </div>
-                    )}
-                    {/* H014: 事件类型标签和置信度 */}
-                    {topEvent && (
-                      <Space size={4} style={{ marginTop: 4 }}>
-                        <Tag
-                          color={highRiskEventTypes.includes(topEvent.type as FinancialEventType) ? 'red' : 'default'}
-                          style={{ fontSize: 11 }}
-                        >
-                          {eventTypeLabels[topEvent.type as FinancialEventType] ?? topEvent.type}
-                        </Tag>
-                        <span style={{ fontSize: 11, color: topEvent.confidence < 0.6 ? '#faad14' : '#52c41a' }}>
-                          {topEvent.confidence < 0.6 ? '待确认' : `置信度 ${Math.round(topEvent.confidence * 100)}%`}
-                        </span>
-                      </Space>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </Card>
-        </Col>
-
-        {/* H009: 风险事件分布 */}
-        <Col xs={24} lg={10}>
-          <Card
-            title="风险事件分布"
-            loading={isLoading}
-          >
-            {!eventDist || eventDist.distribution.length === 0 ? (
-              <Empty description="暂无事件数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-            ) : (
-              <div>
-                {eventDist.distribution.map((item) => {
-                  const isHighRisk = highRiskEventTypes.includes(item.type as FinancialEventType);
-                  const pct = eventDist.total > 0 ? Math.round((item.count / eventDist.total) * 100) : 0;
-                  return (
-                    <div
-                      key={item.type}
-                      style={{ marginBottom: 10, cursor: 'pointer' }}
-                      onClick={() => navigate(`/search?eventType=${item.type}`)}
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                {keyContents.map((item, idx) => (
+                  <div key={item.id} style={{
+                    padding: '10px 0',
+                    borderBottom: idx < keyContents.length - 1 ? '1px solid var(--border-default)' : 'none',
+                  }}>
+                    <a
+                      style={{ display: 'block', fontWeight: 500, fontSize: 14, color: 'var(--text-primary)', marginBottom: 4 }}
+                      onClick={() => { setSelectedContent(item); setDrawerOpen(true); }}
                     >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 3 }}>
-                        <Space size={4}>
-                          <span style={{ fontSize: 13, fontWeight: isHighRisk ? 600 : 400, color: isHighRisk ? '#ff4d4f' : undefined }}>
-                            {eventTypeLabels[item.type as FinancialEventType] ?? item.type}
-                          </span>
-                          {isHighRisk && <Tag color="red" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px' }}>高危</Tag>}
-                        </Space>
-                        <span style={{ fontSize: 12, color: '#666' }}>{item.count} 条</span>
-                      </div>
-                      <Progress
-                        percent={pct}
+                      {item.title.length > 50 ? item.title.slice(0, 50) + '…' : item.title}
+                    </a>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                        {item.sourceName} · {new Date(item.publishedAt).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                      <SentimentBadge
+                        label={item.nlp.enhanced?.label || (item.nlp.sentimentLabel === 'positive' ? 'strong_positive' : item.nlp.sentimentLabel === 'negative' ? 'weak_negative' : 'neutral')}
                         size="small"
-                        strokeColor={isHighRisk ? '#ff4d4f' : '#1677ff'}
-                        showInfo={false}
                       />
+                      {item.matches.map((m) => (
+                        <Tag key={m.projectId} style={{
+                          background: 'var(--bg-input)',
+                          color: 'var(--text-secondary)',
+                          border: 'none',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: 10,
+                          lineHeight: '16px',
+                          padding: '0 4px',
+                        }}>
+                          {m.projectName}
+                        </Tag>
+                      ))}
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
-          </Card>
+          </Panel>
         </Col>
       </Row>
 
-      {/* H004: 高优先级预警列表 + H010 采集健康 + H011 监测方案（第四行） */}
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        {/* 高优先级预警列表 */}
-        <Col xs={24} xl={14}>
-          <Card
-            title={
-              <Space>
-                <AlertOutlined />
-                高优先级预警
-                <Badge count={summary?.pendingAlertCount ?? 0} overflowCount={99} />
-              </Space>
-            }
-            extra={
-              <a onClick={() => navigate('/alerts')} style={{ cursor: 'pointer' }}>
-                查看全部
-              </a>
-            }
-            loading={isLoading}
-          >
-            {topAlerts.length > 0 ? (
-              <Table<Alert>
-                columns={alertColumns}
-                dataSource={topAlerts}
-                rowKey="id"
-                pagination={false}
-                size="small"
-              />
-            ) : (
-              <Empty
-                description="暂无高风险待处理预警"
-                image={Empty.PRESENTED_IMAGE_SIMPLE}
-              />
-            )}
-          </Card>
-        </Col>
-
-        {/* 右侧：H010 + H011 */}
-        <Col xs={24} xl={10}>
-          <Row gutter={[16, 16]}>
-            {/* H010: 采集健康摘要 */}
-            <Col xs={24}>
-              <Card
-                title={
-                  <Space>
-                    {crawlerHealth?.failedCount === 0
-                      ? <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                      : <ExclamationCircleOutlined style={{ color: '#faad14' }} />}
-                    采集健康摘要
-                  </Space>
-                }
-                loading={isLoading}
-                extra={
-                  <a onClick={() => navigate('/settings')} style={{ cursor: 'pointer' }}>
-                    查看详情
-                  </a>
-                }
-                styles={{ body: { padding: '12px 16px' } }}
-              >
-                {crawlerHealth ? (
-                  <>
-                    <Row gutter={16} style={{ marginBottom: 8 }}>
-                      <Col span={12}>
-                        <Statistic
-                          title="可用数据源"
-                          value={crawlerHealth.availableCount}
-                          suffix={`/ ${crawlerHealth.totalCount}`}
-                          valueStyle={{ fontSize: 20, color: crawlerHealth.failedCount === 0 ? '#52c41a' : '#fa8c16' }}
-                        />
-                      </Col>
-                      <Col span={12}>
-                        <Statistic
-                          title="异常来源"
-                          value={crawlerHealth.failedCount}
-                          valueStyle={{ fontSize: 20, color: crawlerHealth.failedCount === 0 ? '#52c41a' : '#ff4d4f' }}
-                        />
-                      </Col>
-                    </Row>
-                    {crawlerHealth.failedCount === 0 ? (
-                      <AntAlert
-                        message="采集正常"
-                        type="success"
-                        showIcon
-                        style={{ fontSize: 12 }}
-                      />
-                    ) : (
-                      <div>
-                        {crawlerHealth.recentFailures.map((f) => (
-                          <div
-                            key={f.name}
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              padding: '4px 0',
-                              borderBottom: '1px solid #f0f0f0',
-                              fontSize: 12,
-                            }}
-                          >
-                            <Space size={4}>
-                              <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                              <span>{f.sourceName}</span>
-                            </Space>
-                            <span style={{ color: '#999' }}>
-                              {f.lastFailedAt
-                                ? new Date(f.lastFailedAt).toLocaleString('zh-CN', {
-                                    month: '2-digit',
-                                    day: '2-digit',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })
-                                : '-'}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <Empty description="暂无数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                )}
-              </Card>
-            </Col>
-
-            {/* H011: 监测方案命中排行 */}
-            <Col xs={24}>
-              <Card
-                title={
-                  <Space>
-                    <ProjectOutlined />
-                    监测方案命中排行
-                  </Space>
-                }
-                loading={isLoading}
-                extra={
-                  <a onClick={() => navigate('/monitoring')} style={{ cursor: 'pointer' }}>
-                    查看全部
-                  </a>
-                }
-                styles={{ body: { padding: '12px 16px' } }}
-              >
-                {projectHits.length === 0 ? (
-                  <Empty description="暂无命中数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                ) : (
-                  projectHits.map((p, idx) => (
-                    <div
-                      key={p.projectId}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        padding: '6px 0',
-                        borderBottom: idx < projectHits.length - 1 ? '1px solid #f0f0f0' : 'none',
-                        cursor: 'pointer',
-                      }}
-                      onClick={() => navigate('/monitoring')}
-                    >
-                      <span style={{ width: 18, color: '#999', fontSize: 12 }}>{idx + 1}</span>
-                      <span style={{ flex: 1, fontSize: 13 }}>{p.projectName}</span>
-                      {p.hasHighRisk && (
-                        <Tag color="red" style={{ fontSize: 10, lineHeight: '16px', padding: '0 4px', marginRight: 6 }}>
-                          高危
-                        </Tag>
-                      )}
-                      <span style={{ color: '#1677ff', fontWeight: 600, fontSize: 14 }}>{p.hitCount}</span>
-                    </div>
-                  ))
-                )}
-              </Card>
-            </Col>
-          </Row>
-        </Col>
-      </Row>
-
-      {/* H008: 关键内容详情抽屉 */}
       <ContentDetailDrawer
         open={drawerOpen}
         item={selectedContent}
-        onClose={() => {
-          setDrawerOpen(false);
-          setSelectedContent(null);
-        }}
+        onClose={() => { setDrawerOpen(false); setSelectedContent(null); }}
       />
     </div>
   );

@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import {
-  Button, Card, Form, Input, Modal, Select, Space, Table, Tag, Typography, Popconfirm,
+  Button, Form, Input, Modal, Select, Space, Table, Tag, Typography, Popconfirm,
   message, Divider, Row, Col,
 } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { industryMappingsApi } from '../../api/client';
+import Panel from '../../components/Panel';
 import type {
   IndustryMapping, IndustryMappingInput, IndustryType, IndustryQueryResult, StockMapping, OverseasMapping,
 } from '../../api/types';
@@ -273,7 +274,7 @@ export default function IndustryMappingsPage() {
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>新建行业映射</Button>
       </div>
 
-      <Card style={{ marginBottom: 16 }}>
+      <Panel style={{ marginBottom: 16 }}>
         <Space wrap>
           <Input
             placeholder="搜索名称或关键词"
@@ -292,9 +293,9 @@ export default function IndustryMappingsPage() {
             options={Object.entries(INDUSTRY_TYPE_LABELS).map(([value, label]) => ({ value, label }))}
           />
         </Space>
-      </Card>
+      </Panel>
 
-      <Card>
+      <Panel>
         <Table
           dataSource={displayed}
           columns={mainColumns}
@@ -302,9 +303,9 @@ export default function IndustryMappingsPage() {
           loading={isLoading}
           pagination={{ pageSize: 10, showTotal: (t) => `共 ${t} 条` }}
         />
-      </Card>
+      </Panel>
 
-      <Card title="测试查询" style={{ marginTop: 16 }}>
+      <Panel title="测试查询" style={{ marginTop: 16 }}>
         <Space.Compact style={{ width: '100%', marginBottom: 16 }}>
           <Input
             placeholder="输入关键词，逗号或空格分隔，如：NVDA, 芯片, 比亚迪"
@@ -322,7 +323,7 @@ export default function IndustryMappingsPage() {
             <Row gutter={[12, 12]}>
               {queryResults.map((r) => (
                 <Col key={r.industry.id} xs={24} sm={12} md={8}>
-                  <Card size="small" bordered>
+                  <Panel style={{ padding: 12, gap: 8 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                       <Text strong>{r.industry.name}</Text>
                       <Tag color="blue">相关度 {r.relevanceScore}</Tag>
@@ -332,13 +333,13 @@ export default function IndustryMappingsPage() {
                       <Text type="secondary" style={{ fontSize: 12 }}>匹配词：</Text>
                       {r.matchedTerms.map((t) => <Tag key={t} color="green" style={{ fontSize: 11 }}>{t}</Tag>)}
                     </div>
-                  </Card>
+                  </Panel>
                 </Col>
               ))}
             </Row>
           </div>
         )}
-      </Card>
+      </Panel>
 
       {/* Create/Edit Modal */}
       <Modal

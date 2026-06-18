@@ -35,6 +35,9 @@ import type {
   DashboardSummary,
   DashboardSummaryParams,
   CrawlerStatusResponse,
+  DeepAnalysisResponse,
+  DeepAnalysisListResponse,
+  DeepAnalysisRecord,
 } from './types';
 
 const BASE_URL = '/api/v1';
@@ -194,4 +197,19 @@ export const dashboardApi = {
 
 export const crawlersApi = {
   getStatus: () => request<CrawlerStatusResponse>('/crawlers/status'),
+};
+
+export const deepAnalysisApi = {
+  /** 触发深度分析 */
+  run: (startDate: string, endDate: string) =>
+    request<DeepAnalysisResponse>('/deep-analysis', {
+      method: 'POST',
+      body: JSON.stringify({ startDate, endDate }),
+    }),
+  /** 获取历史分析记录列表 */
+  list: (limit?: number) =>
+    request<DeepAnalysisListResponse>(`/deep-analysis${limit ? `?limit=${limit}` : ''}`),
+  /** 获取单条分析记录详情 */
+  getById: (id: string) =>
+    request<DeepAnalysisRecord>(`/deep-analysis/${id}`),
 };
