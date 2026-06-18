@@ -46,7 +46,7 @@ export type FinancialSentimentLabel =
   | 'rumor';           // 传闻
 
 /** 分析来源 */
-export type SentimentModelSource = 'dictionary' | 'llm';
+export type SentimentModelSource = 'dictionary' | 'llm' | 'llm-primary' | 'llm-deep';
 
 /** 金融语义情绪增强分析结果 */
 export interface EnhancedSentimentResult {

@@ -303,6 +303,13 @@ export class JsonStorage {
     return rows.map(rowToItem);
   }
 
+  /** 仅返回所有内容 ID（轻量查询，用于 LLM 前去重）*/
+  getAllIds(): Set<string> {
+    const db = getDb();
+    const rows = db.prepare("SELECT id FROM contents").all() as { id: string }[];
+    return new Set(rows.map(r => r.id));
+  }
+
   getSize(): number {
     const db = getDb();
     return (db.prepare('SELECT COUNT(*) as c FROM contents').get() as { c: number }).c;

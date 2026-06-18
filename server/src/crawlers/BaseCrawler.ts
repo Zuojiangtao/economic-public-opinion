@@ -2,7 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 import type { ContentItem, CrawlerConfig, CrawlerStatus, CrawlResult, SourceType, MarketType } from '../types.js';
 import { DEFAULT_CRAWLER_CONFIG, CRAWL_DELAY_MS } from '../config.js';
 import { analyzeSentiment } from '../nlp/sentiment.js';
-import { analyzeFinancialSentiment, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
+import { analyzeFinancialSentiment, analyzeFinancialSentimentBatch, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
 import { recognizeEvents } from '../nlp/eventRecognitionService.js';
 import { v4 as uuid } from 'uuid';
 
@@ -14,6 +14,9 @@ export abstract class BaseCrawler {
   protected config: CrawlerConfig;
   protected http: AxiosInstance;
   protected status: CrawlerStatus;
+  /** 已知内容 ID 集合，用于 LLM 前去重。由 CrawlScheduler 每次 crawl 前注入。 */
+  private knownIds: Set<string> = new Set();
+
 
   constructor(
     name: string,
@@ -58,6 +61,11 @@ export abstract class BaseCrawler {
     this.status.enabled = enabled;
   }
 
+  /** 注入已知内容 ID，crawl 时跳过已有文章的 LLM 分析 */
+  setKnownIds(ids: Set<string>) {
+    this.knownIds = ids;
+  }
+
   async crawl(): Promise<CrawlResult> {
     if (!this.config.enabled) {
       return {
@@ -97,8 +105,18 @@ export abstract class BaseCrawler {
     try {
       const rawItems = await this.fetchWithRetry();
       const basicItems = rawItems.map((item) => this.enrichItem(item, fetchedAt));
-      // T011: 批量执行增强情绪分析（词典模型为同步逻辑，Promise.all 无阻塞风险）
-      const items = await Promise.all(basicItems.map((item) => this.enrichItemEnhanced(item)));
+
+      // LLM 前去重：跳过已存在的文章（仅做基础 NLP，不调 LLM）
+      const newItems = basicItems.filter((item) => !this.knownIds.has(item.id));
+      const dupCount = basicItems.length - newItems.length;
+      if (dupCount > 0) {
+        console.log(`[${this.name}] Skipped ${dupCount} existing items (LLM dedup)`);
+      }
+
+      // T011: 批量执行增强情绪分析（合并 prompt，减少 LLM 调用次数）
+      const items = await this.enrichItemsBatch(newItems);
+
+
 
       this.status.lastCrawlAt = fetchedAt;
       this.status.lastSuccess = true;
@@ -231,6 +249,41 @@ export abstract class BaseCrawler {
       events: events.length > 0 ? events : undefined,
     };
     return item;
+  }
+
+  /**
+   * 批量增强情绪分析：合并 prompt，一次 LLM 调用处理多条内容
+   * 大幅减少 API 调用次数和 429 风险
+   */
+  protected async enrichItemsBatch(items: ContentItem[]): Promise<ContentItem[]> {
+    if (items.length === 0) return items;
+
+    // 准备批量输入
+    const batchInput = items.map(item => ({
+      text: item.title + ' ' + (item.content ?? ''),
+      sourceType: item.sourceType,
+    }));
+
+    // 批量调用 LLM
+    const enhancedResults = await analyzeFinancialSentimentBatch(batchInput);
+
+    // 写回结果
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const enhanced = enhancedResults[i];
+      if (!enhanced) continue;
+
+      const baseSentiment = toBaseSentimentLabel(enhanced.label);
+      const events = recognizeEvents(batchInput[i].text);
+      item.nlp = {
+        ...item.nlp,
+        sentimentLabel: baseSentiment,
+        enhanced,
+        events: events.length > 0 ? events : undefined,
+      };
+    }
+
+    return items;
   }
 
   protected delay(ms: number): Promise<void> {
