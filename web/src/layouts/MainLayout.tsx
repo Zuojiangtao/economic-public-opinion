@@ -117,7 +117,7 @@ export default function MainLayout() {
             background: themeToken.colorBgContainer,
             borderRadius: themeToken.borderRadiusLG,
             overflow: 'auto',
-            maxHeight: 'calc(100vh - 96px)',
+            maxHeight: 'calc(100vh - 104px)',
           }}
         >
           <Outlet />
