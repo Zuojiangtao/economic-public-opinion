@@ -109,7 +109,7 @@ export default function StatCard({
             <span style={{ color: resolvedColor, fontSize: 18, marginBottom: 2 }}>{icon}</span>
           )}
         </div>
-        {trend !== undefined && (
+        {(trend !== undefined || trendLabel) && (
           <div
             style={{
               display: 'flex',
@@ -118,16 +118,22 @@ export default function StatCard({
               fontSize: 12,
               fontFamily: 'var(--font-mono)',
               fontWeight: 600,
-              color: trend > 0 ? 'var(--accent-danger)' : trend < 0 ? 'var(--accent-success)' : 'var(--text-muted)',
+              color: trend !== undefined
+                ? trend > 0 ? 'var(--accent-danger)' : trend < 0 ? 'var(--accent-success)' : 'var(--text-muted)'
+                : 'var(--text-muted)',
             }}
           >
-            {trend > 0 ? (
-              <ArrowUpOutlined style={{ fontSize: 10 }} />
-            ) : trend < 0 ? (
-              <ArrowDownOutlined style={{ fontSize: 10 }} />
-            ) : null}
-            {trend > 0 ? '+' : ''}
-            {trend}
+            {trend !== undefined && (
+              <>
+                {trend > 0 ? (
+                  <ArrowUpOutlined style={{ fontSize: 10 }} />
+                ) : trend < 0 ? (
+                  <ArrowDownOutlined style={{ fontSize: 10 }} />
+                ) : null}
+                {trend > 0 ? '+' : ''}
+                {trend}
+              </>
+            )}
             {trendLabel && <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>{trendLabel}</span>}
           </div>
         )}
