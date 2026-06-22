@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Layout, Menu, Badge, Avatar, Dropdown, theme } from 'antd';
+import { Layout, Menu, Avatar, Dropdown, theme, Tooltip } from 'antd';
 import {
   DashboardOutlined,
   SearchOutlined,
   FundProjectionScreenOutlined,
   AlertOutlined,
   SettingOutlined,
-  BellOutlined,
+  SunOutlined,
+  MoonOutlined,
   UserOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
@@ -16,6 +17,7 @@ import {
   FireOutlined,
   ExperimentOutlined,
 } from '@ant-design/icons';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const { Header, Sider, Content } = Layout;
 
@@ -35,6 +37,7 @@ export default function MainLayout() {
   const navigate = useNavigate();
   const location = useLocation();
   const { token: themeToken } = theme.useToken();
+  const { themeMode, toggleTheme } = useTheme();
 
   const selectedKey = menuItems.find(
     (item) => item.key !== '/' && location.pathname.startsWith(item.key),
@@ -91,9 +94,13 @@ export default function MainLayout() {
             {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-            <Badge count={5} size="small">
-              <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
-            </Badge>
+            <Tooltip title={themeMode === 'dark' ? '切换亮色主题' : '切换暗色主题'}>
+              {themeMode === 'dark' ? (
+                <SunOutlined style={{ fontSize: 18, cursor: 'pointer' }} onClick={toggleTheme} />
+              ) : (
+                <MoonOutlined style={{ fontSize: 18, cursor: 'pointer' }} onClick={toggleTheme} />
+              )}
+            </Tooltip>
             <Dropdown
               menu={{
                 items: [

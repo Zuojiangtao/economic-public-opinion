@@ -1,7 +1,9 @@
-/* ===== Design Tokens — 金融舆情监测系统 Dark Theme ===== */
+/* ===== Design Tokens — 金融舆情监测系统 ===== */
 
-/* ---------- 1. Background & Surface ---------- */
-:root {
+/* ---------- Dark Theme (default) ---------- */
+:root,
+[data-theme="dark"] {
+  /* ---------- 1. Background & Surface ---------- */
   --bg-primary:       #020617;
   --bg-card:          #0E1223;
   --bg-card-hover:    #1A1E2F;
@@ -27,6 +29,50 @@
   --accent-info:        #3B82F6;
   --accent-info-bg:     #0F1A3A;
 
+  /* ---------- 7. Shadows ---------- */
+  --shadow-card-green:  0 0 24px rgba(34, 197, 94, 0.08);
+  --shadow-card-red:    0 0 24px rgba(239, 68, 68, 0.08);
+  --shadow-card-amber:  0 0 24px rgba(245, 158, 11, 0.08);
+  --shadow-card-white:  0 0 24px rgba(248, 250, 252, 0.06);
+}
+
+/* ---------- Light Theme ---------- */
+[data-theme="light"] {
+  /* ---------- 1. Background & Surface ---------- */
+  --bg-primary:       #F9FAFB;
+  --bg-card:          #FFFFFF;
+  --bg-card-hover:    #F3F4F6;
+  --bg-input:         #F3F4F6;
+
+  /* ---------- 2. Border ---------- */
+  --border-default:   #E5E7EB;
+  --border-subtle:    #F3F4F6;
+
+  /* ---------- 3. Text ---------- */
+  --text-primary:     #111827;
+  --text-secondary:   #4B5563;
+  --text-muted:       #9CA3AF;
+  --text-disabled:    #D1D5DB;
+
+  /* ---------- 4. Accent Colors ---------- */
+  --accent-success:     #16A34A;
+  --accent-success-bg:  #F0FDF4;
+  --accent-warning:     #D97706;
+  --accent-warning-bg:  #FFFBEB;
+  --accent-danger:      #DC2626;
+  --accent-danger-bg:   #FEF2F2;
+  --accent-info:        #2563EB;
+  --accent-info-bg:     #EFF6FF;
+
+  /* ---------- 7. Shadows ---------- */
+  --shadow-card-green:  0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card-red:    0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card-amber:  0 1px 3px rgba(0, 0, 0, 0.08);
+  --shadow-card-white:  0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* ---------- Shared tokens (same for both themes) ---------- */
+:root {
   /* ---------- 5. Temperature Range Colors ---------- */
   --temp-overheated:  #EF4444;  /* 过热 80–100 */
   --temp-warm:        #22C55E;  /* 偏热 60–79   */
@@ -38,12 +84,6 @@
   --font-heading: 'Fira Sans', -apple-system, sans-serif;
   --font-body:    'Fira Sans', -apple-system, sans-serif;
   --font-mono:    'Fira Code', 'Consolas', monospace;
-
-  /* ---------- 7. Shadows ---------- */
-  --shadow-card-green:  0 0 24px rgba(34, 197, 94, 0.08);
-  --shadow-card-red:    0 0 24px rgba(239, 68, 68, 0.08);
-  --shadow-card-amber:  0 0 24px rgba(245, 158, 11, 0.08);
-  --shadow-card-white:  0 0 24px rgba(248, 250, 252, 0.06);
 
   /* ---------- 8. Spacing ---------- */
   --space-xs:   4px;
