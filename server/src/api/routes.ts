@@ -37,6 +37,7 @@ import { evaluateAlertRules } from '../alerts/alertEvaluationService.js';
 import { analyzeFinancialSentiment, toBaseSentimentLabel } from '../nlp/financialSentimentModel.js';
 import { recognizeEvents } from '../nlp/eventRecognitionService.js';
 import { buildDashboardSummary } from './dashboardSummaryHandler.js';
+import { createDeepAnalysisRouter } from './deepAnalysisHandler.js';
 
 export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): Router {
   const router = Router();
@@ -514,7 +515,7 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
   /** 执行预警评估，将新预警写入 alerts Map 和 SQLite，返回新增预警 */
   function runAlertEvaluation(): Alert[] {
     const allItems = storage.getAll();
-    const newAlerts = evaluateAlertRules(alertRules, allItems);
+    const newAlerts = evaluateAlertRules(alertRules, allItems, Array.from(alerts.values()));
     for (const a of newAlerts) {
       alerts.set(a.id, a);
       saveAlert(a);
@@ -1049,6 +1050,9 @@ export function createRouter(storage: JsonStorage, scheduler: CrawlScheduler): R
     crawler.setEnabled(enabled);
     res.json(crawler.getStatus());
   });
+
+  // ==================== DeepSeek 手动深度分析 ====================
+  router.use('/deep-analysis', createDeepAnalysisRouter(storage));
 
   return router;
 }

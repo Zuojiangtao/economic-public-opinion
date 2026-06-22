@@ -1,20 +1,18 @@
 import { useState } from 'react';
 import {
-  Card,
   Table,
-  Tag,
   Button,
   Space,
   Select,
   Modal,
-  Form,
-  Input,
   Typography,
   Timeline,
   Descriptions,
   Tabs,
   message,
 } from 'antd';
+import Panel from '../../components/Panel';
+import StatusDot from '../../components/StatusDot';
 import {
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -26,26 +24,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { alertsApi, alertRulesApi } from '../../api/client';
 import type { Alert, AlertStatus, AlertAction, RiskLevel, AlertRule } from '../../api/types';
 
-const statusMap: Record<string, { text: string; color: string; icon: React.ReactNode }> = {
-  pending: { text: '待处理', color: 'red', icon: <ExclamationCircleOutlined /> },
-  processing: { text: '处理中', color: 'blue', icon: <ClockCircleOutlined /> },
-  resolved: { text: '已解决', color: 'green', icon: <CheckCircleOutlined /> },
-  ignored: { text: '已忽略', color: 'default', icon: <StopOutlined /> },
+const statusDotMap: Record<string, { text: string; dotStatus: '异常' | '延迟' | '正常' | '离线' }> = {
+  pending: { text: '待处理', dotStatus: '异常' },
+  processing: { text: '处理中', dotStatus: '延迟' },
+  resolved: { text: '已解决', dotStatus: '正常' },
+  ignored: { text: '已忽略', dotStatus: '离线' },
 };
 
-const riskColorMap: Record<string, string> = {
-  low: 'green',
-  medium: 'gold',
-  high: 'orange',
-  critical: 'red',
+const riskStyles: Record<string, { color: string; bg: string }> = {
+  low: { color: 'var(--accent-success)', bg: 'var(--accent-success-bg)' },
+  medium: { color: 'var(--accent-warning)', bg: 'var(--accent-warning-bg)' },
+  high: { color: 'var(--accent-danger)', bg: 'var(--accent-danger-bg)' },
+  critical: { color: 'var(--accent-danger)', bg: 'var(--accent-danger-bg)' },
 };
+
+
 
 export default function AlertsPage() {
   const [statusFilter, setStatusFilter] = useState<AlertStatus | undefined>();
   const [riskFilter, setRiskFilter] = useState<RiskLevel | undefined>();
   const [detailModal, setDetailModal] = useState<Alert | null>(null);
-  const [handleModal, setHandleModal] = useState<Alert | null>(null);
-  const [form] = Form.useForm();
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -63,31 +61,9 @@ export default function AlertsPage() {
       alertsApi.handle(id, { action: action as AlertAction, note }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['alerts'] });
-      message.success('操作成功');
-      setHandleModal(null);
-      form.resetFields();
+      message.success('已阅');
     },
   });
-
-  function getAvailableActions(status: AlertStatus) {
-    switch (status) {
-      case 'pending':
-        return [
-          { label: '开始处理', value: 'start_processing' },
-          { label: '忽略', value: 'ignore' },
-        ];
-      case 'processing':
-        return [
-          { label: '标记解决', value: 'resolve' },
-          { label: '忽略', value: 'ignore' },
-        ];
-      case 'resolved':
-      case 'ignored':
-        return [{ label: '重新打开', value: 'reopen' }];
-      default:
-        return [];
-    }
-  }
 
   const columns = [
     {
@@ -105,7 +81,20 @@ export default function AlertsPage() {
       key: 'riskLevel',
       width: 100,
       render: (level: string) => (
-        <Tag color={riskColorMap[level]}>{level.toUpperCase()}</Tag>
+        <span
+          style={{
+            display: 'inline-block',
+            padding: '1px 6px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            lineHeight: '20px',
+            color: riskStyles[level]?.color || 'var(--text-secondary)',
+            background: riskStyles[level]?.bg || 'transparent',
+          }}
+        >
+          {level.toUpperCase()}
+        </span>
       ),
     },
     {
@@ -114,11 +103,12 @@ export default function AlertsPage() {
       key: 'status',
       width: 100,
       render: (status: string) => {
-        const st = statusMap[status];
+        const st = statusDotMap[status];
         return st ? (
-          <Tag color={st.color} icon={st.icon}>
-            {st.text}
-          </Tag>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <StatusDot status={st.dotStatus} />
+            <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>{st.text}</span>
+          </span>
         ) : (
           status
         );
@@ -147,9 +137,15 @@ export default function AlertsPage() {
           <Button type="link" size="small" onClick={() => setDetailModal(record)}>
             详情
           </Button>
-          <Button type="link" size="small" onClick={() => setHandleModal(record)}>
-            处置
-          </Button>
+          {(record.status === 'pending' || record.status === 'processing') && (
+            <Button
+              type="link"
+              size="small"
+              onClick={() => handleMutation.mutate({ id: record.id, action: 'resolve' })}
+            >
+              已阅
+            </Button>
+          )}
         </Space>
       ),
     },
@@ -164,7 +160,20 @@ export default function AlertsPage() {
       key: 'enabled',
       width: 80,
       render: (enabled: boolean) => (
-        <Tag color={enabled ? 'green' : 'default'}>{enabled ? '启用' : '停用'}</Tag>
+        <span
+          style={{
+            display: 'inline-block',
+            padding: '1px 6px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            lineHeight: '20px',
+            color: enabled ? 'var(--accent-success)' : 'var(--text-muted)',
+            background: enabled ? 'var(--accent-success-bg)' : 'var(--bg-input)',
+          }}
+        >
+          {enabled ? '启用' : '停用'}
+        </span>
       ),
     },
   ];
@@ -180,7 +189,7 @@ export default function AlertsPage() {
             label: '预警列表',
             children: (
               <>
-                <Card style={{ marginBottom: 16 }}>
+                <Panel style={{ marginBottom: 16 }}>
                   <Space>
                     <Select
                       placeholder="状态筛选"
@@ -218,8 +227,8 @@ export default function AlertsPage() {
                       重置
                     </Button>
                   </Space>
-                </Card>
-                <Card>
+                </Panel>
+                <Panel>
                   <Table<Alert>
                     columns={columns}
                     dataSource={data?.items}
@@ -228,7 +237,7 @@ export default function AlertsPage() {
                     pagination={false}
                     size="middle"
                   />
-                </Card>
+                </Panel>
               </>
             ),
           },
@@ -236,7 +245,7 @@ export default function AlertsPage() {
             key: 'rules',
             label: '预警规则',
             children: (
-              <Card>
+              <Panel>
                 <Table<AlertRule>
                   columns={ruleColumns}
                   dataSource={rules || []}
@@ -245,7 +254,7 @@ export default function AlertsPage() {
                   pagination={false}
                   size="middle"
                 />
-              </Card>
+              </Panel>
             ),
           },
         ]}
@@ -255,21 +264,23 @@ export default function AlertsPage() {
         title="预警详情"
         open={!!detailModal}
         onCancel={() => setDetailModal(null)}
-        footer={[
+        footer={detailModal && (detailModal.status === 'pending' || detailModal.status === 'processing') ? [
           <Button key="close" onClick={() => setDetailModal(null)}>
             关闭
           </Button>,
           <Button
-            key="handle"
+            key="ack"
             type="primary"
             onClick={() => {
-              if (detailModal) {
-                setHandleModal(detailModal);
-                setDetailModal(null);
-              }
+              handleMutation.mutate({ id: detailModal.id, action: 'resolve' });
+              setDetailModal(null);
             }}
           >
-            处置
+            已阅
+          </Button>,
+        ] : [
+          <Button key="close" onClick={() => setDetailModal(null)}>
+            关闭
           </Button>,
         ]}
         width={640}
@@ -278,14 +289,28 @@ export default function AlertsPage() {
           <div>
             <Descriptions column={2} size="small" bordered style={{ marginBottom: 16 }}>
               <Descriptions.Item label="风险等级">
-                <Tag color={riskColorMap[detailModal.riskLevel]}>
+                <span
+                  style={{
+                    display: 'inline-block',
+                    padding: '1px 6px',
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    lineHeight: '20px',
+                    color: riskStyles[detailModal.riskLevel]?.color || 'var(--text-secondary)',
+                    background: riskStyles[detailModal.riskLevel]?.bg || 'transparent',
+                  }}
+                >
                   {detailModal.riskLevel.toUpperCase()}
-                </Tag>
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="状态">
-                <Tag color={statusMap[detailModal.status].color}>
-                  {statusMap[detailModal.status].text}
-                </Tag>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                  <StatusDot status={statusDotMap[detailModal.status].dotStatus} />
+                  <span style={{ fontSize: 12, color: 'var(--text-primary)' }}>
+                    {statusDotMap[detailModal.status].text}
+                  </span>
+                </span>
               </Descriptions.Item>
               <Descriptions.Item label="触发规则" span={2}>
                 {detailModal.ruleName}
@@ -306,8 +331,21 @@ export default function AlertsPage() {
                     children: (
                       <div>
                         <div>
-                          <Tag>{r.action}</Tag>
-                          <span style={{ fontSize: 12, color: '#999' }}>
+                          <span
+                            style={{
+                              display: 'inline-block',
+                              padding: '1px 6px',
+                              borderRadius: 6,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              lineHeight: '20px',
+                              color: 'var(--text-secondary)',
+                              background: 'var(--bg-input)',
+                            }}
+                          >
+                            {r.action}
+                          </span>
+                          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
                             {r.handler} - {new Date(r.timestamp).toLocaleString('zh-CN')}
                           </span>
                         </div>
@@ -319,45 +357,6 @@ export default function AlertsPage() {
               </>
             )}
           </div>
-        )}
-      </Modal>
-
-      <Modal
-        title="处置预警"
-        open={!!handleModal}
-        onCancel={() => {
-          setHandleModal(null);
-          form.resetFields();
-        }}
-        onOk={() => {
-          form.validateFields().then((values) => {
-            if (handleModal) {
-              handleMutation.mutate({
-                id: handleModal.id,
-                action: values.action,
-                note: values.note,
-              });
-            }
-          });
-        }}
-        confirmLoading={handleMutation.isPending}
-      >
-        {handleModal && (
-          <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
-            <Form.Item
-              name="action"
-              label="操作"
-              rules={[{ required: true, message: '请选择操作' }]}
-            >
-              <Select
-                options={getAvailableActions(handleModal.status)}
-                placeholder="选择操作"
-              />
-            </Form.Item>
-            <Form.Item name="note" label="处置说明">
-              <Input.TextArea rows={3} placeholder="输入处置说明（可选）" />
-            </Form.Item>
-          </Form>
         )}
       </Modal>
     </div>

@@ -74,9 +74,20 @@ function newAlertId(): string {
 export function evaluateAlertRules(
   rules: AlertRule[],
   allItems: ContentItem[],
+  existingAlerts?: Alert[],
 ): Alert[] {
   const generated: Alert[] = [];
   const now = new Date();
+
+  // 构建已有待处理预警的去重 key 集合：ruleId + title
+  const existingKeys = new Set<string>();
+  if (existingAlerts) {
+    for (const a of existingAlerts) {
+      if (a.status === 'pending' || a.status === 'processing') {
+        existingKeys.add(`${a.ruleId}::${a.title}`);
+      }
+    }
+  }
 
   for (const rule of rules) {
     if (!rule.enabled) continue;
@@ -100,24 +111,27 @@ export function evaluateAlertRules(
         if (snap.score > cond.temperatureAbove) {
           const key = `${rule.id}-overheat-${snap.industryId}`;
           if (shouldTrigger(key)) {
-            generated.push({
-              id: newAlertId(),
-              title: `${snap.industryName}行业温度过热预警`,
-              description: `${snap.industryName}当前温度指数为 ${snap.score}（过热阈值 ${cond.temperatureAbove}），建议重点关注驱动因素`,
-              riskLevel: snap.score >= 90 ? 'critical' : 'high',
-              status: 'pending',
-              ruleName: rule.name,
-              ruleId: rule.id,
-              triggeredAt: now.toISOString(),
-              relatedContentIds: [],
-              handleRecords: [],
-              triggerMeta: {
-                industryId: snap.industryId,
-                industryName: snap.industryName,
-                currentTemperature: snap.score,
-              },
-            });
-            markTriggered(key);
+            const alertTitle = `${snap.industryName}行业温度过热预警`;
+            if (!existingKeys.has(`${rule.id}::${alertTitle}`)) {
+              generated.push({
+                id: newAlertId(),
+                title: alertTitle,
+                description: `${snap.industryName}当前温度指数为 ${snap.score}（过热阈值 ${cond.temperatureAbove}），建议重点关注驱动因素`,
+                riskLevel: snap.score >= 90 ? 'critical' : 'high',
+                status: 'pending',
+                ruleName: rule.name,
+                ruleId: rule.id,
+                triggeredAt: now.toISOString(),
+                relatedContentIds: [],
+                handleRecords: [],
+                triggerMeta: {
+                  industryId: snap.industryId,
+                  industryName: snap.industryName,
+                  currentTemperature: snap.score,
+                },
+              });
+              markTriggered(key);
+            }
           }
         }
       }
@@ -140,26 +154,29 @@ export function evaluateAlertRules(
         if (rise > cond.temperatureRiseAbove) {
           const key = `${rule.id}-rise-${snap.industryId}`;
           if (shouldTrigger(key, 30 * 60 * 1000)) { // 快速升温 30 分钟冷却
-            generated.push({
-              id: newAlertId(),
-              title: `${snap.industryName}行业温度快速上升预警`,
-              description: `${snap.industryName}温度指数在近期上升了 +${rise} 分（${prev.score} → ${curr.score}），建议及时复核驱动内容`,
-              riskLevel: rise >= 20 ? 'critical' : rise >= 10 ? 'high' : 'medium',
-              status: 'pending',
-              ruleName: rule.name,
-              ruleId: rule.id,
-              triggeredAt: now.toISOString(),
-              relatedContentIds: [],
-              handleRecords: [],
-              triggerMeta: {
-                industryId: snap.industryId,
-                industryName: snap.industryName,
-                currentTemperature: curr.score,
-                previousTemperature: prev.score,
-                temperatureRise: rise,
-              },
-            });
-            markTriggered(key);
+            const alertTitle = `${snap.industryName}行业温度快速上升预警`;
+            if (!existingKeys.has(`${rule.id}::${alertTitle}`)) {
+              generated.push({
+                id: newAlertId(),
+                title: alertTitle,
+                description: `${snap.industryName}温度指数在近期上升了 +${rise} 分（${prev.score} → ${curr.score}），建议及时复核驱动内容`,
+                riskLevel: rise >= 20 ? 'critical' : rise >= 10 ? 'high' : 'medium',
+                status: 'pending',
+                ruleName: rule.name,
+                ruleId: rule.id,
+                triggeredAt: now.toISOString(),
+                relatedContentIds: [],
+                handleRecords: [],
+                triggerMeta: {
+                  industryId: snap.industryId,
+                  industryName: snap.industryName,
+                  currentTemperature: curr.score,
+                  previousTemperature: prev.score,
+                  temperatureRise: rise,
+                },
+              });
+              markTriggered(key);
+            }
           }
         }
       }
@@ -224,20 +241,23 @@ export function evaluateAlertRules(
         if (risePercent > cond.negativeVolumeRiseAbove) {
           const key = `${rule.id}-neg-volume`;
           if (shouldTrigger(key, 30 * 60 * 1000)) {
-            generated.push({
-              id: newAlertId(),
-              title: '负面舆情声量突增预警',
-              description: `近 ${Math.round(halfWindow / 60000)} 分钟内负面内容 ${currNeg.length} 条，较前段增加 ${Math.round(risePercent)}%，超过阈值 ${cond.negativeVolumeRiseAbove}%`,
-              riskLevel: risePercent >= 200 ? 'critical' : risePercent >= 100 ? 'high' : 'medium',
-              status: 'pending',
-              ruleName: rule.name,
-              ruleId: rule.id,
-              triggeredAt: now.toISOString(),
-              relatedContentIds: currNeg.slice(0, 5).map((i) => i.id),
-              handleRecords: [],
-              triggerMeta: { negativeVolumeCount: currNeg.length },
-            });
-            markTriggered(key);
+            const alertTitle = '负面舆情声量突增预警';
+            if (!existingKeys.has(`${rule.id}::${alertTitle}`)) {
+              generated.push({
+                id: newAlertId(),
+                title: alertTitle,
+                description: `近 ${Math.round(halfWindow / 60000)} 分钟内负面内容 ${currNeg.length} 条，较前段增加 ${Math.round(risePercent)}%，超过阈值 ${cond.negativeVolumeRiseAbove}%`,
+                riskLevel: risePercent >= 200 ? 'critical' : risePercent >= 100 ? 'high' : 'medium',
+                status: 'pending',
+                ruleName: rule.name,
+                ruleId: rule.id,
+                triggeredAt: now.toISOString(),
+                relatedContentIds: currNeg.slice(0, 5).map((i) => i.id),
+                handleRecords: [],
+                triggerMeta: { negativeVolumeCount: currNeg.length },
+              });
+              markTriggered(key);
+            }
           }
         }
       }
@@ -254,20 +274,23 @@ export function evaluateAlertRules(
         if (avgSentiment < cond.sentimentBelow) {
           const key = `${rule.id}-sentiment`;
           if (shouldTrigger(key)) {
-            generated.push({
-              id: newAlertId(),
-              title: '市场整体情绪指数偏低预警',
-              description: `近 ${cond.windowMinutes ?? 120} 分钟内平均情绪指数为 ${avgSentiment.toFixed(2)}，低于阈值 ${cond.sentimentBelow}`,
-              riskLevel: avgSentiment < -0.6 ? 'high' : 'medium',
-              status: 'pending',
-              ruleName: rule.name,
-              ruleId: rule.id,
-              triggeredAt: now.toISOString(),
-              relatedContentIds: [],
-              handleRecords: [],
-              triggerMeta: { avgSentiment },
-            });
-            markTriggered(key);
+            const alertTitle = '市场整体情绪指数偏低预警';
+            if (!existingKeys.has(`${rule.id}::${alertTitle}`)) {
+              generated.push({
+                id: newAlertId(),
+                title: alertTitle,
+                description: `近 ${cond.windowMinutes ?? 120} 分钟内平均情绪指数为 ${avgSentiment.toFixed(2)}，低于阈值 ${cond.sentimentBelow}`,
+                riskLevel: avgSentiment < -0.6 ? 'high' : 'medium',
+                status: 'pending',
+                ruleName: rule.name,
+                ruleId: rule.id,
+                triggeredAt: now.toISOString(),
+                relatedContentIds: [],
+                handleRecords: [],
+                triggerMeta: { avgSentiment },
+              });
+              markTriggered(key);
+            }
           }
         }
       }

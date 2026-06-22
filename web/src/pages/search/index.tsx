@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
-  Card,
   Table,
   Input,
   Select,
@@ -13,6 +12,9 @@ import {
   Col,
   Typography,
 } from 'antd';
+import Panel from '../../components/Panel';
+import SentimentBadge from '../../components/SentimentBadge';
+import type { FinancialSentimentLabel } from '../../api/types';
 import { SearchOutlined, ReloadOutlined } from '@ant-design/icons';
 import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
@@ -44,17 +46,17 @@ const riskOptions = [
 ];
 
 
-const sentimentColors: Record<string, string> = {
-  positive: 'green',
-  neutral: 'blue',
-  negative: 'red',
+const sentimentToFinancial: Record<string, FinancialSentimentLabel> = {
+  positive: 'weak_positive',
+  neutral: 'neutral',
+  negative: 'weak_negative',
 };
 
-const riskColors: Record<string, string> = {
-  low: 'green',
-  medium: 'gold',
-  high: 'orange',
-  critical: 'red',
+const riskStyles: Record<string, { color: string; bg: string }> = {
+  low: { color: 'var(--accent-success)', bg: 'var(--accent-success-bg)' },
+  medium: { color: 'var(--accent-warning)', bg: 'var(--accent-warning-bg)' },
+  high: { color: 'var(--accent-danger)', bg: 'var(--accent-danger-bg)' },
+  critical: { color: 'var(--accent-danger)', bg: 'var(--accent-danger-bg)' },
 };
 
 const sourceLabels: Record<string, string> = {
@@ -175,9 +177,7 @@ export default function SearchPage() {
       key: 'sentiment',
       width: 80,
       render: (_: unknown, record: ContentItem) => (
-        <Tag color={sentimentColors[record.nlp.sentimentLabel]}>
-          {sentimentLabels[record.nlp.sentimentLabel]}
-        </Tag>
+        <SentimentBadge label={sentimentToFinancial[record.nlp.sentimentLabel] || 'neutral'} />
       ),
     },
     {
@@ -185,9 +185,20 @@ export default function SearchPage() {
       key: 'riskLevel',
       width: 90,
       render: (_: unknown, record: ContentItem) => (
-        <Tag color={riskColors[record.nlp.riskLevel]}>
+        <span
+          style={{
+            display: 'inline-block',
+            padding: '1px 6px',
+            borderRadius: 6,
+            fontSize: 12,
+            fontWeight: 600,
+            lineHeight: '20px',
+            color: riskStyles[record.nlp.riskLevel]?.color || 'var(--text-secondary)',
+            background: riskStyles[record.nlp.riskLevel]?.bg || 'transparent',
+          }}
+        >
           {record.nlp.riskLevel.toUpperCase()}
-        </Tag>
+        </span>
       ),
     },
     {
@@ -203,7 +214,7 @@ export default function SearchPage() {
       key: 'metrics',
       width: 100,
       render: (_: unknown, record: ContentItem) => (
-        <span style={{ fontSize: 12, color: '#999' }}>
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
           👍{record.metrics.likes} 💬{record.metrics.comments}
         </span>
       ),
@@ -214,7 +225,7 @@ export default function SearchPage() {
     <div>
       <Typography.Title level={4} style={{ marginBottom: 16 }}>舆情检索</Typography.Title>
 
-      <Card style={{ marginBottom: 16 }}>
+      <Panel style={{ marginBottom: 16 }}>
         <Row gutter={[12, 12]}>
           <Col xs={24} md={8}>
             <Input
@@ -289,23 +300,28 @@ export default function SearchPage() {
         {eventTypeFilter && (
           <div style={{ marginTop: 12 }}>
             <Space>
-              <span style={{ color: '#666', fontSize: 13 }}>当前事件类型筛选：</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 13 }}>当前事件类型筛选：</span>
               <Tag
-                color="blue"
+                color="var(--accent-info)"
                 closable
                 onClose={() => {
                   setEventTypeFilter(undefined);
                 }}
+                style={{
+                  color: 'var(--accent-info)',
+                  background: 'var(--accent-info-bg)',
+                  borderColor: 'color-mix(in srgb, var(--accent-info) 30%, transparent)',
+                }}
               >
                 {eventTypeFilter}
               </Tag>
-              <span style={{ color: '#999', fontSize: 12 }}>（事件类型过滤为前端展示提示，后端检索以关键词为准）</span>
+              <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>（事件类型过滤为前端展示提示，后端检索以关键词为准）</span>
             </Space>
           </div>
         )}
-      </Card>
+        </Panel>
 
-      <Card>
+      <Panel>
         <Table<ContentItem>
           columns={columns}
           dataSource={data?.items}
@@ -331,7 +347,7 @@ export default function SearchPage() {
           size="middle"
           scroll={{ x: 900 }}
         />
-      </Card>
+      </Panel>
 
       <ContentDetailDrawer
         open={drawerOpen}

@@ -29,6 +29,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import ReactECharts from 'echarts-for-react';
 import { temperaturesApi, contentsApi } from '@/api/client.ts';
+import Panel from '@/components/Panel';
 import type { TemperatureSnapshot, TemperatureLevel, TemperatureDetail, FinancialEventType } from '@/api/types.ts';
 
 // ============================================================
@@ -38,20 +39,20 @@ const levelConfig: Record<
   TemperatureLevel,
   { label: string; color: string; tagColor: string; icon: React.ReactNode }
 > = {
-  hot:      { label: '过热', color: '#ff4d4f', tagColor: 'red',    icon: <FireOutlined /> },
-  warm:     { label: '偏热', color: '#fa8c16', tagColor: 'orange', icon: <ThunderboltOutlined /> },
-  neutral:  { label: '中性', color: '#1677ff', tagColor: 'blue',   icon: <MinusCircleOutlined /> },
-  cool:     { label: '偏冷', color: '#52c41a', tagColor: 'cyan',   icon: <ArrowDownOutlined /> },
-  freezing: { label: '冰点', color: '#722ed1', tagColor: 'purple', icon: <SnippetsOutlined /> },
+  hot:      { label: '过热', color: '#EF4444', tagColor: 'red',    icon: <FireOutlined /> },
+  warm:     { label: '偏热', color: '#22C55E', tagColor: 'green',  icon: <ThunderboltOutlined /> },
+  neutral:  { label: '中性', color: '#F59E0B', tagColor: 'gold',   icon: <MinusCircleOutlined /> },
+  cool:     { label: '偏冷', color: '#94A3B8', tagColor: 'default',icon: <ArrowDownOutlined /> },
+  freezing: { label: '冰点', color: '#475569', tagColor: 'default',icon: <SnippetsOutlined /> },
 };
 
 // 温度进度条颜色
 function getProgressColor(score: number) {
-  if (score >= 80) return '#ff4d4f';
-  if (score >= 60) return '#fa8c16';
-  if (score >= 40) return '#1677ff';
-  if (score >= 20) return '#52c41a';
-  return '#722ed1';
+  if (score >= 80) return '#EF4444';
+  if (score >= 60) return '#22C55E';
+  if (score >= 40) return '#F59E0B';
+  if (score >= 20) return '#94A3B8';
+  return '#475569';
 }
 
 // ============================================================
@@ -133,7 +134,7 @@ function TemperatureCard({
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 16, fontSize: 12, color: '#999' }}>
+      <div style={{ display: 'flex', gap: 16, fontSize: 12, color: 'var(--text-muted)' }}>
         <Tooltip title="情绪得分">
           <span>情绪 {snap.breakdown.sentimentScore}</span>
         </Tooltip>
@@ -223,7 +224,7 @@ function ChangeLeaderboard({
         />
       </Col>
       <Col span={12}>
-        <Typography.Text style={{ color: '#1677ff', display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600 }}>
+        <Typography.Text style={{ color: 'var(--accent-info)', display: 'block', marginBottom: 6, fontSize: 12, fontWeight: 600 }}>
           <FallOutlined /> 快速降温
         </Typography.Text>
         <Table<TemperatureSnapshot>
@@ -443,16 +444,16 @@ function TemperatureDetailDrawer({
       <Typography.Title level={5} style={{ marginTop: 8 }}>分项明细</Typography.Title>
       <Descriptions column={2} size="small" bordered>
         <Descriptions.Item label="情绪得分 (×35%)">
-          <Progress percent={snap.breakdown.sentimentScore} size="small" strokeColor="#52c41a" />
+          <Progress percent={snap.breakdown.sentimentScore} size="small" strokeColor="var(--accent-success)" />
         </Descriptions.Item>
         <Descriptions.Item label="声量异动 (×25%)">
-          <Progress percent={snap.breakdown.volumeAnomalyScore} size="small" strokeColor="#1677ff" />
+          <Progress percent={snap.breakdown.volumeAnomalyScore} size="small" strokeColor="var(--accent-info)" />
         </Descriptions.Item>
         <Descriptions.Item label="传播热度 (×20%)">
-          <Progress percent={snap.breakdown.spreadIntensityScore} size="small" strokeColor="#fa8c16" />
+          <Progress percent={snap.breakdown.spreadIntensityScore} size="small" strokeColor="var(--accent-warning)" />
         </Descriptions.Item>
         <Descriptions.Item label="来源可信度 (×20%)">
-          <Progress percent={snap.breakdown.sourceCredibilityScore} size="small" strokeColor="#722ed1" />
+          <Progress percent={snap.breakdown.sourceCredibilityScore} size="small" strokeColor="var(--text-secondary)" />
         </Descriptions.Item>
       </Descriptions>
 
@@ -475,7 +476,7 @@ function TemperatureDetailDrawer({
                     </Typography.Text>
                     <Badge color={riskColor[item.riskLevel]} text={riskLabel[item.riskLevel]} />
                   </div>
-                  <div style={{ display: 'flex', gap: 8, fontSize: 11, color: '#999' }}>
+                  <div style={{ display: 'flex', gap: 8, fontSize: 11, color: 'var(--text-muted)' }}>
                     <Tag style={{ fontSize: 11, margin: 0 }} color={sentimentColor[item.sentiment]}>
                       {sentimentLabel[item.sentiment]}
                     </Tag>
@@ -633,18 +634,18 @@ export default function TemperaturePage() {
       {/* 温度排行榜 + 变化榜 */}
       <Row gutter={16} style={{ marginBottom: 16 }}>
         <Col xs={24} lg={14}>
-          <Card title="行业温度排行" loading={isLoading} style={{ height: '100%' }}>
+          <Panel title="行业温度排行" style={{ height: '100%' }}>
             {items.length > 0 ? (
               <ReactECharts option={rankOption} style={{ height: 260 }} />
             ) : (
               <Empty description="暂无数据" />
             )}
-          </Card>
+          </Panel>
         </Col>
         <Col xs={24} lg={10}>
-          <Card title="温度变化榜" loading={isLoading} style={{ height: '100%' }}>
+          <Panel title="温度变化榜" style={{ height: '100%' }}>
             <ChangeLeaderboard items={items} loading={isLoading} onSelect={setSelectedSnap} />
-          </Card>
+          </Panel>
         </Col>
       </Row>
 
@@ -685,7 +686,7 @@ export default function TemperaturePage() {
       {/* 偏冷 / 冰点 */}
       {coldItems.length > 0 && (
         <div>
-          <Typography.Text strong style={{ color: '#722ed1', display: 'block', marginBottom: 8 }}>
+          <Typography.Text strong style={{ color: 'var(--temp-freezing)', display: 'block', marginBottom: 8 }}>
             <ArrowDownOutlined /> 低温板块
           </Typography.Text>
           <Row gutter={[12, 12]}>

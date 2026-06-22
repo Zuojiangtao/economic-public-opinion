@@ -21,6 +21,7 @@ import { TigerCrawler } from './TigerCrawler.js';
 import { Laohu8Crawler } from './Laohu8Crawler.js';
 import { FirstBankCrawler } from './FirstBankCrawler.js';
 import { StockstarCrawler } from './StockstarCrawler.js';
+import { AkShareCrawler } from './AkShareCrawler.js';
 
 export function createAllCrawlers(): BaseCrawler[] {
   return [
@@ -46,6 +47,7 @@ export function createAllCrawlers(): BaseCrawler[] {
     new Laohu8Crawler(),
     new FirstBankCrawler(),
     new StockstarCrawler(),
+    new AkShareCrawler(),
   ];
 }
 

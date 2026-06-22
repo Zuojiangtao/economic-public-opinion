@@ -629,3 +629,38 @@ export interface CrawlerStatusResponse {
   storageSize: number;
 }
 
+// ==================== DeepSeek Deep Analysis ====================
+
+export interface DeepAnalysisSummary {
+  overallSentiment: string;
+  keyEvents: string[];
+  riskWarnings: string[];
+  sectorImpact: string[];
+  actionableInsights: string[];
+}
+
+export interface DeepAnalysisRecord {
+  id: string;
+  createdAt: string;
+  startDate: string;
+  endDate: string;
+  contentCount: number;
+  contentIds: string[];
+  analysis: string;
+  summary: DeepAnalysisSummary;
+  model: string;
+  tokensUsed?: number;
+}
+
+export interface DeepAnalysisResponse {
+  success: boolean;
+  record?: DeepAnalysisRecord;
+  contentCount?: number;
+  message: string;
+}
+
+export interface DeepAnalysisListResponse {
+  records: DeepAnalysisRecord[];
+  total: number;
+}
+

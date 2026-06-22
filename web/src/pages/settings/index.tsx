@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import {
-  Card,
   Table,
   Button,
   Tag,
@@ -18,14 +17,13 @@ import {
   Tooltip,
   message,
 } from 'antd';
+import Panel from '../../components/Panel';
+import StatusDot from '../../components/StatusDot';
 import {
   PlusOutlined,
   DeleteOutlined,
   PlayCircleOutlined,
   ReloadOutlined,
-  CheckCircleOutlined,
-  CloseCircleOutlined,
-  LoadingOutlined,
   EditOutlined,
 } from '@ant-design/icons';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -114,14 +112,14 @@ function CrawlerManagement() {
 
   if (isError) {
     return (
-      <Card>
+      <Panel>
         <Typography.Paragraph type="secondary">
           爬虫后端未启动。请先在 server/ 目录运行 <Typography.Text code>npm run dev</Typography.Text> 启动爬虫服务（端口 3001）。
         </Typography.Paragraph>
         <Typography.Paragraph type="secondary">
           后端启动后，此页面将自动显示爬虫状态。
         </Typography.Paragraph>
-      </Card>
+      </Panel>
     );
   }
 
@@ -133,7 +131,7 @@ function CrawlerManagement() {
       render: (name: string, record: CrawlerStatus) => (
         <div>
           <div style={{ fontWeight: 500 }}>{name}</div>
-          <div style={{ fontSize: 12, color: '#999' }}>{record.name}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{record.name}</div>
         </div>
       ),
     },
@@ -142,10 +140,14 @@ function CrawlerManagement() {
       key: 'status',
       width: 100,
       render: (_: unknown, record: CrawlerStatus) => {
-        if (record.isRunning) return <Tag icon={<LoadingOutlined />} color="processing">采集中</Tag>;
-        if (!record.enabled) return <Tag color="default">已停用</Tag>;
-        if (record.lastSuccess) return <Tag icon={<CheckCircleOutlined />} color="success">正常</Tag>;
-        return <Tag icon={<CloseCircleOutlined />} color="error">异常</Tag>;
+        const status = record.isRunning ? '延迟' : !record.enabled ? '离线' : record.lastSuccess ? '正常' : '异常';
+        const label = record.isRunning ? '采集中' : !record.enabled ? '已停用' : record.lastSuccess ? '正常' : '异常';
+        return (
+          <Space size={6}>
+            <StatusDot status={status as '正常' | '延迟' | '异常' | '离线'} />
+            <span>{label}</span>
+          </Space>
+        );
       },
     },
     {
@@ -203,7 +205,7 @@ function CrawlerManagement() {
 
   return (
     <>
-      <Card style={{ marginBottom: 16 }}>
+      <Panel style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
             <Typography.Text>数据总量：<strong>{data?.storageSize ?? 0}</strong> 条</Typography.Text>
@@ -225,8 +227,8 @@ function CrawlerManagement() {
             </Button>
           </Space>
         </div>
-      </Card>
-      <Card>
+      </Panel>
+      <Panel>
         {isLoading ? (
           <div style={{ textAlign: 'center', padding: 40 }}><Spin /></div>
         ) : (
@@ -238,7 +240,7 @@ function CrawlerManagement() {
             size="middle"
           />
         )}
-      </Card>
+      </Panel>
     </>
   );
 }
@@ -275,10 +277,10 @@ const availabilityLabels: Record<string, { text: string; color: string }> = {
 };
 
 function CredibilityBar({ score }: { score: number }) {
-  const color = score >= 80 ? '#52c41a' : score >= 60 ? '#1677ff' : score >= 40 ? '#fa8c16' : '#ff4d4f';
+  const color = score >= 80 ? 'var(--accent-success)' : score >= 60 ? 'var(--accent-info)' : score >= 40 ? 'var(--accent-warning)' : 'var(--accent-danger)';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{ flex: 1, background: '#f0f0f0', borderRadius: 4, height: 6, minWidth: 60 }}>
+      <div style={{ flex: 1, background: 'var(--bg-input)', borderRadius: 4, height: 6, minWidth: 60 }}>
         <div style={{ width: `${score}%`, background: color, height: 6, borderRadius: 4, transition: 'width 0.3s' }} />
       </div>
       <span style={{ fontWeight: 600, color, minWidth: 28 }}>{score}</span>
@@ -326,7 +328,7 @@ function SourceConfigManagement() {
       render: (_: unknown, r: SourceConfig) => (
         <div>
           <div style={{ fontWeight: 500 }}>{r.name}</div>
-          <div style={{ fontSize: 12, color: '#999' }}>{r.sourceName}</div>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{r.sourceName}</div>
         </div>
       ),
     },
@@ -437,7 +439,7 @@ function SourceConfigManagement() {
 
   return (
     <>
-      <Card style={{ marginBottom: 16 }}>
+      <Panel style={{ marginBottom: 16 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Space>
             <Select
@@ -448,15 +450,15 @@ function SourceConfigManagement() {
             />
             <Typography.Text type="secondary">
               共 <strong>{totalCount}</strong> 个数据源，
-              <strong style={{ color: '#52c41a' }}>{enabledCount}</strong> 个纳入温度计算
+              <strong style={{ color: 'var(--accent-success)' }}>{enabledCount}</strong> 个纳入温度计算
             </Typography.Text>
           </Space>
           <Button icon={<ReloadOutlined />} onClick={() => queryClient.invalidateQueries({ queryKey: ['sourceConfigs'] })}>
             刷新
           </Button>
         </div>
-      </Card>
-      <Card>
+      </Panel>
+      <Panel>
         <Table<SourceConfig>
           columns={columns}
           dataSource={configs ?? []}
@@ -466,7 +468,7 @@ function SourceConfigManagement() {
           pagination={false}
           rowClassName={(r) => (!r.includeInTemperature ? 'ant-table-row-disabled' : '')}
         />
-      </Card>
+      </Panel>
 
       <Modal
         title={`编辑数据源：${editingConfig?.name}`}
@@ -575,7 +577,7 @@ export default function SettingsPage() {
       render: (synonyms: string[]) =>
         synonyms?.length > 0
           ? synonyms.map((s) => <Tag key={s}>{s}</Tag>)
-          : <span style={{ color: '#999' }}>-</span>,
+          : <span style={{ color: 'var(--text-muted)' }}>-</span>,
     },
     {
       title: '创建时间',
@@ -612,7 +614,7 @@ export default function SettingsPage() {
             label: '词库管理',
             children: (
               <>
-                <Card style={{ marginBottom: 16 }}>
+                <Panel style={{ marginBottom: 16 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Space>
                       <Select
@@ -628,8 +630,8 @@ export default function SettingsPage() {
                       添加词条
                     </Button>
                   </div>
-                </Card>
-                <Card>
+                </Panel>
+                <Panel>
                   <Table<LexiconEntry>
                     columns={columns}
                     dataSource={lexicons || []}
@@ -638,7 +640,7 @@ export default function SettingsPage() {
                     pagination={{ pageSize: 15, showTotal: (total) => `共 ${total} 条` }}
                     size="middle"
                   />
-                </Card>
+                </Panel>
               </>
             ),
           },
