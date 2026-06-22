@@ -40,19 +40,19 @@ const levelConfig: Record<
   { label: string; color: string; tagColor: string; icon: React.ReactNode }
 > = {
   hot:      { label: '过热', color: '#EF4444', tagColor: 'red',    icon: <FireOutlined /> },
-  warm:     { label: '偏热', color: '#22C55E', tagColor: 'green',  icon: <ThunderboltOutlined /> },
-  neutral:  { label: '中性', color: '#F59E0B', tagColor: 'gold',   icon: <MinusCircleOutlined /> },
-  cool:     { label: '偏冷', color: '#94A3B8', tagColor: 'default',icon: <ArrowDownOutlined /> },
-  freezing: { label: '冰点', color: '#475569', tagColor: 'default',icon: <SnippetsOutlined /> },
+  warm:     { label: '偏热', color: '#fa8c16', tagColor: 'orange',  icon: <ThunderboltOutlined /> },
+  neutral:  { label: '中性', color: '#1677ff', tagColor: 'blue',   icon: <MinusCircleOutlined /> },
+  cool:     { label: '偏冷', color: '#52c41a', tagColor: 'cyan',icon: <ArrowDownOutlined /> },
+  freezing: { label: '冰点', color: '#94A3B8', tagColor: 'default',icon: <SnippetsOutlined /> },
 };
 
 // 温度进度条颜色
 function getProgressColor(score: number) {
   if (score >= 80) return '#EF4444';
-  if (score >= 60) return '#22C55E';
-  if (score >= 40) return '#F59E0B';
-  if (score >= 20) return '#94A3B8';
-  return '#475569';
+  if (score >= 60) return '#fa8c16';
+  if (score >= 40) return '#1677ff';
+  if (score >= 20) return '#52c41a';
+  return '#94A3B8';
 }
 
 // ============================================================
