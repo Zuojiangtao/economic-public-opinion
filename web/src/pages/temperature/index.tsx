@@ -292,9 +292,9 @@ function TemperatureDetailDrawer({
     radar: {
       indicator: [
         { name: '情绪得分\n(×35%)', max: 100 },
-        { name: '声量异动\n(×25%)', max: 100 },
-        { name: '传播热度\n(×20%)', max: 100 },
-        { name: '来源可信度\n(×20%)', max: 100 },
+        { name: '声量异动\n(×35%)', max: 100 },
+        { name: '传播热度\n(×30%)', max: 100 },
+        { name: '来源可信度\n(仅展示)', max: 100 },
       ],
     },
     series: [
@@ -446,13 +446,13 @@ function TemperatureDetailDrawer({
         <Descriptions.Item label="情绪得分 (×35%)">
           <Progress percent={snap.breakdown.sentimentScore} size="small" strokeColor="var(--accent-success)" />
         </Descriptions.Item>
-        <Descriptions.Item label="声量异动 (×25%)">
+        <Descriptions.Item label="声量异动 (×35%)">
           <Progress percent={snap.breakdown.volumeAnomalyScore} size="small" strokeColor="var(--accent-info)" />
         </Descriptions.Item>
-        <Descriptions.Item label="传播热度 (×20%)">
+        <Descriptions.Item label="传播热度 (×30%)">
           <Progress percent={snap.breakdown.spreadIntensityScore} size="small" strokeColor="var(--accent-warning)" />
         </Descriptions.Item>
-        <Descriptions.Item label="来源可信度 (×20%)">
+        <Descriptions.Item label="来源可信度 (仅展示)">
           <Progress percent={snap.breakdown.sourceCredibilityScore} size="small" strokeColor="var(--text-secondary)" />
         </Descriptions.Item>
       </Descriptions>

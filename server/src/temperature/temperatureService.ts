@@ -84,7 +84,7 @@ function getWeightedItems(industry: IndustryMapping, allItems: ContentItem[]): W
 // T013 升级：相关度加权均值，高相关内容贡献更大
 // ============================================================
 function calcSentimentScore(weighted: WeightedItem[]): number {
-  if (weighted.length === 0) return 50;
+  if (weighted.length === 0) return 50; // 无匹配内容时取中间值（neutral映射50），避免人为拉到极端
   let wSum = 0;
   let totalW = 0;
   for (const { item, weight } of weighted) {
@@ -97,14 +97,18 @@ function calcSentimentScore(weighted: WeightedItem[]): number {
 }
 
 // ============================================================
-// 声量异动得分 0-100（25%）
+// 声量异动得分 0-100（35%）
 // T007 升级：使用事件簇数量而非原始内容数量，避免同一事件跨平台
 // 转载后重复放大声量。有事件簇数据时优先使用，否则退化为原始计数。
+// 使用对数缩放避免归一化趋同：当全局 max 很小时，线性归一化会让
+// 所有行业得分集中在窄区间；对数缩放让绝对量级的差异更显著。
 // ============================================================
 function calcVolumeAnomalyScore(clusterCount: number, allClusterCounts: number[]): number {
   const max = Math.max(...allClusterCounts);
   if (max === 0) return 0;
-  return Math.round((clusterCount / max) * 100);
+  // 对数缩放：log(1+x)/log(1+max) * 100，避免小数值区间趋同
+  const score = (Math.log(1 + clusterCount) / Math.log(1 + max)) * 100;
+  return Math.round(Math.max(0, Math.min(100, score)));
 }
 
 /**
@@ -128,8 +132,9 @@ function countClusters(weighted: WeightedItem[], allClusters: Map<string, EventC
 }
 
 // ============================================================
-// 传播热度得分 0-100（20%）
+// 传播热度得分 0-100（30%）
 // T013 升级：用相关度权重加权互动量，偶发提及的低相关内容贡献较小
+// 使用对数缩放避免归一化趋同
 // ============================================================
 function calcSpreadIntensityScore(weighted: WeightedItem[], allMaxEngagement: number): number {
   if (weighted.length === 0) return 0;
@@ -139,7 +144,8 @@ function calcSpreadIntensityScore(weighted: WeightedItem[], allMaxEngagement: nu
     return sum + eng * weight;
   }, 0);
   if (allMaxEngagement === 0) return 0;
-  return Math.round(Math.min(100, (totalEngagement / allMaxEngagement) * 100));
+  const score = (Math.log(1 + totalEngagement) / Math.log(1 + allMaxEngagement)) * 100;
+  return Math.round(Math.max(0, Math.min(100, score)));
 }
 
 // ============================================================
@@ -186,14 +192,16 @@ function calcSourceCredibilityScore(
 
 // ============================================================
 // 综合温度公式
-// 板块温度 = 情绪得分*35% + 声量异动*25% + 传播热度*20% + 来源可信度*20%
+// 板块温度 = 情绪得分*35% + 声量异动*35% + 传播热度*30%
+// 来源可信度是质量指标而非热度指标，仅保留在 breakdown 供展示，不参与综合温度计算。
+// 可信度低的来源内容已在 calcSourceCredibilityScore 中被过滤(includeInTemperature=false)，
+// 因此可信度已在数据准入层面发挥作用，无需在温度公式中重复加权。
 // ============================================================
 function calcTemperature(bd: TemperatureBreakdown): number {
   const score =
     bd.sentimentScore * 0.35 +
-    bd.volumeAnomalyScore * 0.25 +
-    bd.spreadIntensityScore * 0.20 +
-    bd.sourceCredibilityScore * 0.20;
+    bd.volumeAnomalyScore * 0.35 +
+    bd.spreadIntensityScore * 0.30;
   return Math.round(Math.max(0, Math.min(100, score)));
 }
 
@@ -309,9 +317,9 @@ export function computeTemperatureDetail(
 
   const breakdown: TemperatureBreakdown = {
     sentimentScore: calcSentimentScore(wi),
-    // T007+T013：声量使用加权事件簇数，单行业场景以自身归一化
-    volumeAnomalyScore: clusterCount > 0 ? Math.min(100, Math.round((clusterCount / Math.max(count, 1)) * 100 + 20)) : 0,
-    spreadIntensityScore: Math.round(Math.min(100, (totalEngagement / maxEngagement) * 100)),
+    // T007+T013：声量使用加权事件簇数，单行业场景使用对数缩放归一化
+    volumeAnomalyScore: clusterCount > 0 ? Math.min(100, Math.round((Math.log(1 + clusterCount) / Math.log(1 + Math.max(count, 1))) * 100)) : 0,
+    spreadIntensityScore: Math.round(Math.min(100, (Math.log(1 + totalEngagement) / Math.log(1 + maxEngagement)) * 100)),
     sourceCredibilityScore: calcSourceCredibilityScore(wi, sourceConfigMap, sourceTypeCredibility),
   };
 

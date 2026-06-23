@@ -815,10 +815,10 @@ components:
       type: object
       required: [sentimentScore, volumeAnomalyScore, spreadIntensityScore, sourceCredibilityScore]
       properties:
-        sentimentScore: { type: number, description: '情绪得分 0-100，权重35%' }
-        volumeAnomalyScore: { type: number, description: '声量异动得分 0-100，权重25%' }
-        spreadIntensityScore: { type: number, description: '传播热度得分 0-100，权重20%' }
-        sourceCredibilityScore: { type: number, description: '来源可信度得分 0-100，权重20%' }
+        sentimentScore: { type: number, description: '情绪得分 0-100，综合权重35%' }
+        volumeAnomalyScore: { type: number, description: '声量异动得分 0-100，综合权重35%' }
+        spreadIntensityScore: { type: number, description: '传播热度得分 0-100，综合权重30%' }
+        sourceCredibilityScore: { type: number, description: '来源可信度得分 0-100，仅供参考展示，不参与综合温度计算' }
 
     TemperatureSnapshot:
       type: object
