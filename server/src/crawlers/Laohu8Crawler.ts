@@ -119,16 +119,16 @@ export class Laohu8Crawler extends BaseCrawler {
   }
 
   private parseTime(timeStr: string): string {
-    if (!timeStr) return new Date().toISOString();
+    if (!timeStr) return '';
     try {
-      // 处理相对时间（如"2小时前"）
+      // 处理相对时间（如"2小时前"）——无法得到精确发布时间，返回空
       if (timeStr.includes('分钟前') || timeStr.includes('小时前') || timeStr.includes('天前')) {
-        return new Date().toISOString();
+        return '';
       }
       const d = new Date(timeStr.replace(/-/g, '/'));
-      return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+      return isNaN(d.getTime()) ? '' : d.toISOString();
     } catch {
-      return new Date().toISOString();
+      return '';
     }
   }
 }

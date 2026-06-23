@@ -100,15 +100,16 @@ export class ThsCrawler extends BaseCrawler {
   }
 
   private parseTime(timeStr: string): string {
-    if (!timeStr) return new Date().toISOString();
+    if (!timeStr) return '';
     try {
       if (/^\d+$/.test(timeStr)) {
-        return new Date(parseInt(timeStr) * 1000).toISOString();
+        const d = new Date(parseInt(timeStr) * 1000);
+        return isNaN(d.getTime()) ? '' : d.toISOString();
       }
       const d = new Date(timeStr.replace(/-/g, '/'));
-      return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+      return isNaN(d.getTime()) ? '' : d.toISOString();
     } catch {
-      return new Date().toISOString();
+      return '';
     }
   }
 }

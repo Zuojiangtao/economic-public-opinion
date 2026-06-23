@@ -116,7 +116,7 @@ export class RegulatoryAuthorityCrawler extends BaseCrawler {
 
   private extractDate(text: string): string {
     const m = text.match(/(\d{4})[./-](\d{1,2})[./-](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2}))?/);
-    if (!m) return new Date().toISOString();
+    if (!m) return '';
 
     const year = parseInt(m[1], 10);
     const month = parseInt(m[2], 10) - 1;
@@ -125,6 +125,6 @@ export class RegulatoryAuthorityCrawler extends BaseCrawler {
     const minute = parseInt(m[5] || '0', 10);
     const date = new Date(year, month, day, hour, minute);
 
-    return isNaN(date.getTime()) ? new Date().toISOString() : date.toISOString();
+    return isNaN(date.getTime()) ? '' : date.toISOString();
   }
 }

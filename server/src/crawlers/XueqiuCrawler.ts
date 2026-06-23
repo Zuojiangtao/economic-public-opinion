@@ -96,8 +96,8 @@ export class XueqiuCrawler extends BaseCrawler {
   }
 
   private parseTimestamp(ts: number | string): string {
-    if (!ts) return new Date().toISOString();
+    if (!ts) return '';
     const d = typeof ts === 'number' ? new Date(ts) : new Date(ts);
-    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+    return isNaN(d.getTime()) ? '' : d.toISOString();
   }
 }

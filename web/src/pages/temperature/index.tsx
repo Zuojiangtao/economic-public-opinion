@@ -481,7 +481,7 @@ function TemperatureDetailDrawer({
                       {sentimentLabel[item.sentiment]}
                     </Tag>
                     <span>{item.sourceName}</span>
-                    <span>{new Date(item.publishedAt).toLocaleString('zh-CN')}</span>
+                    <span>{item.publishedAt ? new Date(item.publishedAt).toLocaleString('zh-CN') : '时间未知'}</span>
                   </div>
                 </div>
               </List.Item>

@@ -136,9 +136,9 @@ export class BrokerResearchCrawler extends BaseCrawler {
   }
 
   private parseDate(input: unknown): string {
-    if (!input) return new Date().toISOString();
+    if (!input) return '';
     const d = new Date(String(input).replace(/-/g, '/'));
-    return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+    return isNaN(d.getTime()) ? '' : d.toISOString();
   }
 
   private matchBroker(org: string): BrokerProfile | undefined {

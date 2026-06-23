@@ -168,17 +168,18 @@ export class FutuCrawler extends BaseCrawler {
   }
 
   private parseTime(timeStr: string | number): string {
-    if (!timeStr) return new Date().toISOString();
+    if (!timeStr) return '';
     try {
       // 处理时间戳（秒或毫秒）
       if (typeof timeStr === 'number') {
         const ts = timeStr > 10000000000 ? timeStr : timeStr * 1000;
-        return new Date(ts).toISOString();
+        const d = new Date(ts);
+        return isNaN(d.getTime()) ? '' : d.toISOString();
       }
       const d = new Date(timeStr);
-      return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+      return isNaN(d.getTime()) ? '' : d.toISOString();
     } catch {
-      return new Date().toISOString();
+      return '';
     }
   }
 }

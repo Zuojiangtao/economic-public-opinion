@@ -83,21 +83,21 @@ export class GubaCrawler extends BaseCrawler {
   }
 
   private parseGubaTime(timeStr: string): string {
-    if (!timeStr) return new Date().toISOString();
+    if (!timeStr) return '';
     const now = new Date();
 
     const mmdd = timeStr.match(/^(\d{1,2})-(\d{1,2})\s*(\d{2}):(\d{2})$/);
     if (mmdd) {
       const d = new Date(now.getFullYear(), parseInt(mmdd[1]) - 1, parseInt(mmdd[2]), parseInt(mmdd[3]), parseInt(mmdd[4]));
-      return d.toISOString();
+      return isNaN(d.getTime()) ? '' : d.toISOString();
     }
 
     const hhmm = timeStr.match(/^(\d{2}):(\d{2})$/);
     if (hhmm) {
       const d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(hhmm[1]), parseInt(hhmm[2]));
-      return d.toISOString();
+      return isNaN(d.getTime()) ? '' : d.toISOString();
     }
 
-    return now.toISOString();
+    return '';
   }
 }

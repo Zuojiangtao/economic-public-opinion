@@ -61,7 +61,7 @@ export class ZhihuCrawler extends BaseCrawler {
           sourceName: '知乎',
           author: target.author?.name || '知乎用户',
           url: `https://www.zhihu.com/question/${target.id}`,
-          publishedAt: new Date(target.created || Date.now()).toISOString(),
+          publishedAt: target.created ? new Date(target.created).toISOString() : '',
           fetchedAt: '',
           market: 'cn',
           metrics: {

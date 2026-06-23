@@ -76,12 +76,12 @@ export class ClsCrawler extends BaseCrawler {
   }
 
   private parseTime(timeStr: string): string {
-    if (!timeStr) return new Date().toISOString();
+    if (!timeStr) return '';
     try {
       const d = new Date(timeStr);
-      return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+      return isNaN(d.getTime()) ? '' : d.toISOString();
     } catch {
-      return new Date().toISOString();
+      return '';
     }
   }
 }

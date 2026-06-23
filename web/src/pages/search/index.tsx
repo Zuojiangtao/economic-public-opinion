@@ -207,7 +207,7 @@ export default function SearchPage() {
       key: 'publishedAt',
       width: 170,
       sorter: true,
-      render: (text: string) => new Date(text).toLocaleString('zh-CN'),
+      render: (text: string) => text ? new Date(text).toLocaleString('zh-CN') : '时间未知',
     },
     {
       title: '互动',

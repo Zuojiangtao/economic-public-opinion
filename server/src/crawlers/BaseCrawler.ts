@@ -210,6 +210,9 @@ export abstract class BaseCrawler {
   protected enrichItem(item: ContentItem, fetchedAt: string): ContentItem {
     if (!item.id) item.id = uuid();
     if (!item.fetchedAt) item.fetchedAt = fetchedAt;
+    // publishedAt 兜底：当爬虫无法从源站解析真实发布时间时（parseTime 返回空字符串），
+    // 用 fetchedAt（爬虫采集入库时间）作为 publishedAt，确保字段始终有值。
+    if (!item.publishedAt) item.publishedAt = fetchedAt;
     if (!item.sourceType) item.sourceType = this.sourceType;
     if (!item.sourceName) item.sourceName = this.sourceName;
     if (!item.market) item.market = this.market;

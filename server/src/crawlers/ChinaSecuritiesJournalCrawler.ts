@@ -47,7 +47,7 @@ export class ChinaSecuritiesJournalCrawler extends BaseCrawler {
         url,
         title,
         content: content || title,
-        publishedAt: new Date().toISOString(),
+        publishedAt: '',
       });
     });
 
@@ -92,7 +92,7 @@ export class ChinaSecuritiesJournalCrawler extends BaseCrawler {
   }
 
   private parseCnDateTime(text: string): string {
-    if (!text) return new Date().toISOString();
+    if (!text) return '';
     const m = text.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/);
     if (m) {
       const d = new Date(
@@ -104,6 +104,6 @@ export class ChinaSecuritiesJournalCrawler extends BaseCrawler {
       );
       if (!isNaN(d.getTime())) return d.toISOString();
     }
-    return new Date().toISOString();
+    return '';
   }
 }

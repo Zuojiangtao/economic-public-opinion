@@ -104,7 +104,7 @@ export default function ContentDetailDrawer({ open, item, onClose }: ContentDeta
         <Descriptions.Item label="来源名称">{item.sourceName}</Descriptions.Item>
         <Descriptions.Item label="作者">{item.author}</Descriptions.Item>
         <Descriptions.Item label="发布时间">
-          {new Date(item.publishedAt).toLocaleString('zh-CN')}
+          {item.publishedAt ? new Date(item.publishedAt).toLocaleString('zh-CN') : '时间未知'}
         </Descriptions.Item>
         <Descriptions.Item label="抓取时间">
           {new Date(item.fetchedAt).toLocaleString('zh-CN')}

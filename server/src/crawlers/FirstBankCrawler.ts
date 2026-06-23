@@ -77,7 +77,7 @@ export class FirstBankCrawler extends BaseCrawler {
                 sourceName: '第一银行',
                 author: '第一银行',
                 url: url.startsWith('http') ? url : `https://wealth.firstbank.com.tw${url}`,
-                publishedAt: new Date().toISOString(),
+                publishedAt: '',
                 fetchedAt: '',
                 market: 'cn',
                 metrics: {},
@@ -105,14 +105,14 @@ export class FirstBankCrawler extends BaseCrawler {
   }
 
   private parseTime(timeStr: string): string {
-    if (!timeStr) return new Date().toISOString();
+    if (!timeStr) return '';
     try {
       // 处理繁体中文日期格式
       const cleaned = timeStr.replace(/年|月/g, '-').replace(/日/g, '').trim();
       const d = new Date(cleaned);
-      return isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+      return isNaN(d.getTime()) ? '' : d.toISOString();
     } catch {
-      return new Date().toISOString();
+      return '';
     }
   }
 }

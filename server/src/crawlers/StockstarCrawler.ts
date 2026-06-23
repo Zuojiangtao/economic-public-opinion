@@ -68,6 +68,6 @@ export class StockstarCrawler extends BaseCrawler {
       const d = new Date(`${match[1]}-${match[2]}-${match[3]}T12:00:00+08:00`);
       if (!isNaN(d.getTime())) return d.toISOString();
     }
-    return new Date().toISOString();
+    return '';
   }
 }
