@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { BaseCrawler } from './BaseCrawler.js';
 import type { ContentItem } from '../types.js';
+import { decodeHtmlBuffer } from './encodingUtils.js';
 
 const LIST_URL = 'https://www.cs.com.cn/xwzx/';
 const BASE_RESOLVE = 'https://www.cs.com.cn/xwzx/';
@@ -8,6 +9,7 @@ const BASE_RESOLVE = 'https://www.cs.com.cn/xwzx/';
 /**
  * 专业金融机构媒体爬虫
  * 数据源：中证网（中国证券报）要闻频道 — 证券监管、资本市场、宏观政策等权威资讯
+ * 注意：该站可能使用 GB2312 编码，需通过 decodeHtmlBuffer 转码
  */
 export class ChinaSecuritiesJournalCrawler extends BaseCrawler {
   constructor() {
@@ -16,13 +18,14 @@ export class ChinaSecuritiesJournalCrawler extends BaseCrawler {
 
   protected async doFetch(): Promise<ContentItem[]> {
     const resp = await this.http.get(LIST_URL, {
-      responseType: 'text',
+      responseType: 'arraybuffer',
       headers: {
         Referer: 'https://www.cs.com.cn/',
       },
     });
 
-    const $ = cheerio.load(resp.data);
+    const html = decodeHtmlBuffer(resp.data);
+    const $ = cheerio.load(html);
     const seen = new Set<string>();
     const raw: { url: string; title: string; content: string; publishedAt: string }[] = [];
 

@@ -1,10 +1,12 @@
 import { BaseCrawler } from './BaseCrawler.js';
 import type { ContentItem } from '../types.js';
 import { CRAWL_DELAY_MS } from '../config.js';
+import { decodeHtmlBuffer } from './encodingUtils.js';
 
 /**
  * 东方财富快讯/新闻爬虫
  * 数据源：东方财富财经新闻 API
+ * 注意：fallback URL 可能使用 GBK 编码，需通过 decodeHtmlBuffer 转码
  */
 export class EastMoneyCrawler extends BaseCrawler {
   constructor() {
@@ -61,10 +63,10 @@ export class EastMoneyCrawler extends BaseCrawler {
     try {
       const resp = await this.http.get('https://newsapi.eastmoney.com/kuaixun/v1/getlist_102_ajaxResult_50_1_.html', {
         headers: { Referer: 'https://www.eastmoney.com/' },
-        responseType: 'text',
+        responseType: 'arraybuffer',
       });
 
-      let text = resp.data as string;
+      let text = decodeHtmlBuffer(resp.data);
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) return [];
       const json = JSON.parse(jsonMatch[0]);

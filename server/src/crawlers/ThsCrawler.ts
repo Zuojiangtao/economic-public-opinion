@@ -1,10 +1,12 @@
 import * as cheerio from 'cheerio';
 import { BaseCrawler } from './BaseCrawler.js';
 import type { ContentItem } from '../types.js';
+import { decodeHtmlBuffer } from './encodingUtils.js';
 
 /**
  * 同花顺爬虫
  * 数据源：同花顺财经要闻
+ * 注意：该站可能使用 GBK 编码，需通过 decodeHtmlBuffer 转码
  */
 export class ThsCrawler extends BaseCrawler {
   constructor() {
@@ -72,10 +74,11 @@ export class ThsCrawler extends BaseCrawler {
 
   private async fallbackHtmlParse(): Promise<any[]> {
     const resp = await this.http.get('https://news.10jqka.com.cn/', {
-      responseType: 'text',
+      responseType: 'arraybuffer',
     });
 
-    const $ = cheerio.load(resp.data);
+    const html = decodeHtmlBuffer(resp.data);
+    const $ = cheerio.load(html);
     const items: any[] = [];
 
     $('ul.list-con li, .news-list li').each((_i, el) => {

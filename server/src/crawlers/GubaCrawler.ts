@@ -2,10 +2,12 @@ import * as cheerio from 'cheerio';
 import { BaseCrawler } from './BaseCrawler.js';
 import type { ContentItem } from '../types.js';
 import { CRAWL_DELAY_MS } from '../config.js';
+import { decodeHtmlBuffer } from './encodingUtils.js';
 
 /**
  * 东方财富股吧爬虫
  * 数据源：股吧热门帖子
+ * 注意：该站可能使用 GBK 编码，需通过 decodeHtmlBuffer 转码
  */
 export class GubaCrawler extends BaseCrawler {
   private boards = [
@@ -29,10 +31,11 @@ export class GubaCrawler extends BaseCrawler {
           headers: {
             Referer: 'https://guba.eastmoney.com/',
           },
-          responseType: 'text',
+          responseType: 'arraybuffer',
         });
 
-        const $ = cheerio.load(resp.data);
+        const html = decodeHtmlBuffer(resp.data);
+        const $ = cheerio.load(html);
         const posts = $('.listitem, .articleh');
 
         posts.each((_i, el) => {

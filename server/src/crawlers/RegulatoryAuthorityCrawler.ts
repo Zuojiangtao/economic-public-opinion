@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import { BaseCrawler } from './BaseCrawler.js';
 import type { ContentItem } from '../types.js';
 import { CRAWL_DELAY_MS } from '../config.js';
+import { decodeHtmlBuffer } from './encodingUtils.js';
 
 interface AuthoritySource {
   name: string;
@@ -49,11 +50,12 @@ export class RegulatoryAuthorityCrawler extends BaseCrawler {
       try {
         await this.delay(CRAWL_DELAY_MS);
         const resp = await this.http.get(source.listUrl, {
-          responseType: 'text',
+          responseType: 'arraybuffer',
           headers: { Referer: source.referer },
         });
 
-        const items = this.parseListPage(resp.data as string, source);
+        const html = decodeHtmlBuffer(resp.data);
+        const items = this.parseListPage(html, source);
         for (const item of items) {
           if (seen.has(item.url)) continue;
           seen.add(item.url);

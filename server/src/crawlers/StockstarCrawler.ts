@@ -1,11 +1,13 @@
 import { BaseCrawler } from './BaseCrawler.js';
 import type { ContentItem } from '../types.js';
 import * as cheerio from 'cheerio';
+import { decodeHtmlBuffer } from './encodingUtils.js';
 
 /**
  * 证券之星爬虫
  * 数据源：证券之星财经新闻 https://finance.stockstar.com/
  * 采用 HTML 解析（API 已下线）
+ * 注意：该站使用 GB2312 编码，需通过 iconv-lite 转码
  */
 export class StockstarCrawler extends BaseCrawler {
   constructor() {
@@ -17,10 +19,12 @@ export class StockstarCrawler extends BaseCrawler {
 
     try {
       const resp = await this.http.get('https://finance.stockstar.com/', {
-        responseType: 'text',
+        responseType: 'arraybuffer',
       });
 
-      const $ = cheerio.load(resp.data);
+      // 证券之星使用 GB2312 编码，需显式转码为 UTF-8
+      const html = decodeHtmlBuffer(resp.data, 'GB2312');
+      const $ = cheerio.load(html);
 
       // 主选择器：新闻链接
       $('a[href*="IG20"]').each((_, elem) => {
