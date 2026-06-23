@@ -146,6 +146,7 @@ export default function SearchPage() {
       dataIndex: 'title',
       key: 'title',
       ellipsis: true,
+      width: 450,
       render: (text: string, record: ContentItem) => (
         <a
           onClick={() => {
