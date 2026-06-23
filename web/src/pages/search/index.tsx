@@ -213,11 +213,18 @@ export default function SearchPage() {
       title: '互动',
       key: 'metrics',
       width: 100,
-      render: (_: unknown, record: ContentItem) => (
-        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-          👍{record.metrics.likes} 💬{record.metrics.comments}
-        </span>
-      ),
+      render: (_: unknown, record: ContentItem) => {
+        const likes = record.metrics.likes ?? 0;
+        const comments = record.metrics.comments ?? 0;
+        if (likes === 0 && comments === 0) {
+          return <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>;
+        }
+        return (
+          <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            👍{likes} 💬{comments}
+          </span>
+        );
+      },
     },
   ];
 
