@@ -1,6 +1,5 @@
 import type { BaseCrawler } from '../crawlers/BaseCrawler.js';
 import type { JsonStorage } from '../storage/JsonStorage.js';
-import type { CrawlLog } from '../types.js';
 import { appendCrawlLog } from '../storage/crawlLogsStore.js';
 import { CRAWL_DELAY_MS } from '../config.js';
 import { v4 as uuid } from 'uuid';
@@ -215,12 +214,8 @@ export class CrawlScheduler {
         result = await crawler.crawl();
       }
 
-      const added = result.items.filter((item: any) => !this.storage.getById(item.id)).length;
-
-      // 存入 storage
-      for (const item of result.items) {
-        this.storage.upsert(item);
-      }
+      // 存入 storage：新数据用 addItems（去重+插入），已有数据的更新由后续 enrich 流程处理
+      const added = this.storage.addItems(result.items);
 
       // 更新增量基准
       if (result.items.length > 0) {
